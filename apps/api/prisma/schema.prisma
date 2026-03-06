@@ -1,0 +1,227 @@
+// DTax Database Schema
+// Core data models for crypto tax calculation
+//
+// Design principles:
+// 1. All monetary values stored as Decimal (not float) for precision
+// 2. All timestamps in UTC
+// 3. Soft delete via deletedAt field where needed
+// 4. Indexes on frequently queried columns
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ──────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  dataSources  DataSource[]
+  transactions Transaction[]
+  taxLots      TaxLot[]
+  taxReports   TaxReport[]
+
+  @@map("users")
+}
+
+// ─── Data Source ────────────────────────────────
+// Represents a connection to an exchange or wallet
+
+model DataSource {
+  id            String           @id @default(uuid())
+  userId        String           @map("user_id")
+  type          DataSourceType
+  name          String           // e.g., "Binance", "Coinbase", "MetaMask"
+  status        DataSourceStatus @default(ACTIVE)
+  lastSyncAt    DateTime?        @map("last_sync_at")
+  config        Json?            // Encrypted API keys, wallet addresses, etc.
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@map("data_sources")
+}
+
+enum DataSourceType {
+  EXCHANGE_API   // Via CCXT
+  CSV_IMPORT     // Manual CSV upload
+  BLOCKCHAIN     // On-chain data
+  MANUAL         // Manual entry
+}
+
+enum DataSourceStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  DISCONNECTED
+}
+
+// ─── Transaction ───────────────────────────────
+// Unified transaction record (normalized from any source)
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  sourceId  String?  @map("source_id")
+
+  // Core fields
+  type      TxType
+  timestamp DateTime
+
+  // Sent side
+  sentAsset    String?  @map("sent_asset")
+  sentAmount   Decimal? @map("sent_amount") @db.Decimal(30, 18)
+  sentValueUsd Decimal? @map("sent_value_usd") @db.Decimal(20, 8)
+
+  // Received side
+  receivedAsset    String?  @map("received_asset")
+  receivedAmount   Decimal? @map("received_amount") @db.Decimal(30, 18)
+  receivedValueUsd Decimal? @map("received_value_usd") @db.Decimal(20, 8)
+
+  // Fee
+  feeAsset    String?  @map("fee_asset")
+  feeAmount   Decimal? @map("fee_amount") @db.Decimal(30, 18)
+  feeValueUsd Decimal? @map("fee_value_usd") @db.Decimal(20, 8)
+
+  // AI Classification
+  aiClassified  Boolean @default(false) @map("ai_classified")
+  aiConfidence  Float?  @map("ai_confidence")
+  originalType  String? @map("original_type") // Raw type from source before classification
+
+  // Tax Calculation Results (filled after calculation)
+  costBasis     Decimal? @map("cost_basis") @db.Decimal(20, 8)
+  gainLoss      Decimal? @map("gain_loss") @db.Decimal(20, 8)
+  holdingPeriod HoldingPeriod? @map("holding_period")
+
+  // Metadata
+  externalId String?  @map("external_id") // ID from original source
+  notes      String?
+  tags       String[] @default([])
+  rawData    Json?    @map("raw_data")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataSource DataSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([userId, type])
+  @@index([sentAsset])
+  @@index([receivedAsset])
+  @@map("transactions")
+}
+
+enum TxType {
+  BUY
+  SELL
+  TRADE
+  TRANSFER_IN
+  TRANSFER_OUT
+  AIRDROP
+  STAKING_REWARD
+  MINING_REWARD
+  INTEREST
+  GIFT_RECEIVED
+  GIFT_SENT
+  LOST
+  STOLEN
+  FORK
+  MARGIN_TRADE
+  LIQUIDATION
+  INTERNAL_TRANSFER
+  UNKNOWN
+}
+
+enum HoldingPeriod {
+  SHORT_TERM
+  LONG_TERM
+}
+
+// ─── Tax Lot ───────────────────────────────────
+// Tracks individual acquisition lots for cost basis
+
+model TaxLot {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  asset         String
+  amount        Decimal  @db.Decimal(30, 18)
+  remaining     Decimal  @db.Decimal(30, 18)  // Amount not yet consumed
+  costBasisUsd  Decimal  @map("cost_basis_usd") @db.Decimal(20, 8)
+  acquiredAt    DateTime @map("acquired_at")
+  source        String?  // "Binance BUY", "Airdrop", etc.
+  transactionId String?  @map("transaction_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, asset])
+  @@index([userId, acquiredAt])
+  @@map("tax_lots")
+}
+
+// ─── Tax Report ────────────────────────────────
+// Saved tax calculation results
+
+model TaxReport {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
+  // Report parameters
+  taxYear  Int            @map("tax_year")
+  method   CostBasisMethod
+  country  String         @default("US")
+
+  // Summary
+  shortTermGains    Decimal @default(0) @map("short_term_gains") @db.Decimal(20, 8)
+  shortTermLosses   Decimal @default(0) @map("short_term_losses") @db.Decimal(20, 8)
+  longTermGains     Decimal @default(0) @map("long_term_gains") @db.Decimal(20, 8)
+  longTermLosses    Decimal @default(0) @map("long_term_losses") @db.Decimal(20, 8)
+  totalIncome       Decimal @default(0) @map("total_income") @db.Decimal(20, 8)
+  totalTransactions Int     @default(0) @map("total_transactions")
+
+  // Report data
+  reportData Json?  @map("report_data") // Full line-item detail
+  status     ReportStatus @default(DRAFT)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taxYear, method])
+  @@index([userId])
+  @@map("tax_reports")
+}
+
+enum CostBasisMethod {
+  FIFO
+  LIFO
+  HIFO
+}
+
+enum ReportStatus {
+  DRAFT
+  CALCULATING
+  COMPLETE
+  ERROR
+}
