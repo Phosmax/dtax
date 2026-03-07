@@ -2,6 +2,7 @@
     "nav": {
         "dashboard": "仪表盘",
         "transactions": "交易记录",
+        "transfers": "内部转账",
         "taxReport": "税务报告"
     },
     "dashboard": {
@@ -65,6 +66,32 @@
             "feeUsd": "手续费 (USD)",
             "notes": "备注"
         }
+    },
+    "transfers": {
+        "title": "内部转账",
+        "subtitle": "匹配钱包和交易所之间的转账记录",
+        "loading": "正在检测转账匹配...",
+        "matchesFound": "检测到 {count} 组潜在匹配",
+        "unmatchedOut": "{count} 笔未匹配转出",
+        "unmatchedIn": "{count} 笔未匹配转入",
+        "noMatches": "未检测到转账匹配",
+        "noMatchesHint": "从多个钱包/交易所导入交易记录以检测内部转账",
+        "from": "转出",
+        "to": "转入",
+        "asset": "资产",
+        "amount": "数量",
+        "timeDiff": "时间差",
+        "amountDiff": "数量差（手续费）",
+        "confirm": "确认匹配",
+        "dismiss": "非转账",
+        "confirming": "确认中...",
+        "dismissing": "忽略中...",
+        "confirmed": "转账已确认",
+        "dismissed": "匹配已忽略",
+        "confirmAll": "全部确认",
+        "minutes": "{count}分钟",
+        "hours": "{count}小时",
+        "days": "{count}天"
     },
     "tax": {
         "title": "税务报告",

@@ -2,6 +2,7 @@
     "nav": {
         "dashboard": "Dashboard",
         "transactions": "Transactions",
+        "transfers": "Transfers",
         "taxReport": "Tax Report"
     },
     "dashboard": {
@@ -65,6 +66,32 @@
             "feeUsd": "Fee (USD)",
             "notes": "Notes"
         }
+    },
+    "transfers": {
+        "title": "Internal Transfers",
+        "subtitle": "Match transfers between your wallets and exchanges",
+        "loading": "Detecting transfer matches...",
+        "matchesFound": "{count} potential matches found",
+        "unmatchedOut": "{count} unmatched outgoing",
+        "unmatchedIn": "{count} unmatched incoming",
+        "noMatches": "No transfer matches detected",
+        "noMatchesHint": "Import transactions from multiple wallets/exchanges to detect internal transfers",
+        "from": "From",
+        "to": "To",
+        "asset": "Asset",
+        "amount": "Amount",
+        "timeDiff": "Time Diff",
+        "amountDiff": "Amount Diff (fees)",
+        "confirm": "Confirm Match",
+        "dismiss": "Not a Transfer",
+        "confirming": "Confirming...",
+        "dismissing": "Dismissing...",
+        "confirmed": "Transfer confirmed",
+        "dismissed": "Match dismissed",
+        "confirmAll": "Confirm All",
+        "minutes": "{count}m",
+        "hours": "{count}h",
+        "days": "{count}d"
     },
     "tax": {
         "title": "Tax Report",

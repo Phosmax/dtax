@@ -26,6 +26,9 @@ export function LocaleNav({ locale }: { locale: string }) {
                 <Link href="/transactions" className={`nav-link ${pathname === '/transactions' ? 'active' : ''}`}>
                     {t('transactions')}
                 </Link>
+                <Link href="/transfers" className={`nav-link ${pathname === '/transfers' ? 'active' : ''}`}>
+                    {t('transfers')}
+                </Link>
                 <Link href="/tax" className={`nav-link ${pathname === '/tax' ? 'active' : ''}`}>
                     {t('taxReport')}
                 </Link>

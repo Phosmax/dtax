@@ -124,3 +124,48 @@ export async function syncConnection(id: string) {
         method: 'POST',
     });
 }
+
+// ─── Transfer Matching ─────────────────────────
+
+export interface TransferMatch {
+    outTx: {
+        id: string;
+        sourceId: string;
+        asset: string;
+        amount: number;
+        timestamp: string;
+    };
+    inTx: {
+        id: string;
+        sourceId: string;
+        asset: string;
+        amount: number;
+        timestamp: string;
+    };
+    amountDiff: number;
+    timeDiffMs: number;
+}
+
+export interface TransferMatchesResult {
+    matches: TransferMatch[];
+    unmatchedOut: number;
+    unmatchedIn: number;
+}
+
+export async function getTransferMatches() {
+    return apiFetch<{ data: TransferMatchesResult }>('/api/v1/transfers/matches');
+}
+
+export async function confirmTransfer(outTxId: string, inTxId: string) {
+    return apiFetch<{ data: { status: string; outTxId: string; inTxId: string } }>('/api/v1/transfers/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ outTxId, inTxId }),
+    });
+}
+
+export async function dismissTransfer(outTxId: string, inTxId: string) {
+    return apiFetch<{ data: { status: string } }>('/api/v1/transfers/dismiss', {
+        method: 'POST',
+        body: JSON.stringify({ outTxId, inTxId }),
+    });
+}
