@@ -35,7 +35,12 @@
         "recentTransactions": "近期交易",
         "viewAll": "查看全部 →",
         "noTransactions": "暂无交易记录",
-        "noTransactionsHint": "通过 CSV 导入交易记录或手动添加"
+        "noTransactionsHint": "通过 CSV 导入交易记录或手动添加",
+        "ordinaryIncome": "普通收入",
+        "stakingIncome": "质押",
+        "miningIncome": "挖矿",
+        "airdropIncome": "空投",
+        "interestIncome": "利息"
     },
     "transactions": {
         "title": "交易记录",

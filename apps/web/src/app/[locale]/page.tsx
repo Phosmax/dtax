@@ -151,6 +151,22 @@ export default function Dashboard() {
           <span className="stat-label">{t('transactions')}</span>
           <span className="stat-value neutral">{txMeta.total}</span>
         </div>
+        {taxSummary && (taxSummary.income?.total || taxSummary.totalIncome) ? (
+          <div className="stat-card" style={{ borderLeft: '3px solid var(--accent)' }}>
+            <span className="stat-label">{t('ordinaryIncome')}</span>
+            <span className="stat-value" style={{ color: 'var(--accent)' }}>
+              {formatUsd(taxSummary.income?.total ?? taxSummary.totalIncome ?? 0)}
+            </span>
+            {taxSummary.income && (
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.6 }}>
+                {taxSummary.income.staking > 0 && <div>{t('stakingIncome')}: {formatUsd(taxSummary.income.staking)}</div>}
+                {taxSummary.income.mining > 0 && <div>{t('miningIncome')}: {formatUsd(taxSummary.income.mining)}</div>}
+                {taxSummary.income.airdrops > 0 && <div>{t('airdropIncome')}: {formatUsd(taxSummary.income.airdrops)}</div>}
+                {taxSummary.income.interest > 0 && <div>{t('interestIncome')}: {formatUsd(taxSummary.income.interest)}</div>}
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>

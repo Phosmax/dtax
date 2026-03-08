@@ -49,6 +49,14 @@ export interface TaxSummary {
     longTermLosses: number;
     netGainLoss: number;
     totalTransactions: number;
+    totalIncome?: number;
+    income?: {
+        staking: number;
+        mining: number;
+        airdrops: number;
+        interest: number;
+        total: number;
+    };
     status: string;
 }
 

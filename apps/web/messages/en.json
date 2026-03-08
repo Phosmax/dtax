@@ -35,7 +35,12 @@
         "recentTransactions": "Recent Transactions",
         "viewAll": "View All →",
         "noTransactions": "No transactions yet",
-        "noTransactionsHint": "Import transactions via CSV or add them manually"
+        "noTransactionsHint": "Import transactions via CSV or add them manually",
+        "ordinaryIncome": "Ordinary Income",
+        "stakingIncome": "Staking",
+        "miningIncome": "Mining",
+        "airdropIncome": "Airdrops",
+        "interestIncome": "Interest"
     },
     "transactions": {
         "title": "Transactions",
