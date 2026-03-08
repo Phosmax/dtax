@@ -53,6 +53,16 @@
         "deleting": "删除中...",
         "updating": "更新中...",
         "actions": "操作",
+        "filter": {
+            "asset": "资产",
+            "assetPlaceholder": "BTC, ETH...",
+            "type": "类型",
+            "allTypes": "全部类型",
+            "dateFrom": "开始日期",
+            "dateTo": "结束日期",
+            "apply": "筛选",
+            "clear": "清除"
+        },
         "import": {
             "title": "从 CSV 导入交易",
             "description": "上传交易所或区块链浏览器导出的 CSV 文件。支持 Coinbase、币安、Etherscan 及通用格式。",

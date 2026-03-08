@@ -58,11 +58,23 @@ export async function getHealth() {
     return apiFetch<{ status: string; timestamp: string }>('/api/health/deep');
 }
 
-export async function getTransactions(page = 1, limit = 20) {
+export interface TransactionFilters {
+    asset?: string;
+    type?: string;
+    from?: string;
+    to?: string;
+}
+
+export async function getTransactions(page = 1, limit = 20, filters?: TransactionFilters) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters?.asset) params.set('asset', filters.asset);
+    if (filters?.type) params.set('type', filters.type);
+    if (filters?.from) params.set('from', filters.from);
+    if (filters?.to) params.set('to', filters.to);
     return apiFetch<{
         data: Transaction[];
         meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/api/v1/transactions?page=${page}&limit=${limit}`);
+    }>(`/api/v1/transactions?${params.toString()}`);
 }
 
 export async function calculateTax(taxYear: number, method = 'FIFO') {

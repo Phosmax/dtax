@@ -53,6 +53,16 @@
         "deleting": "Deleting...",
         "updating": "Updating...",
         "actions": "Actions",
+        "filter": {
+            "asset": "Asset",
+            "assetPlaceholder": "BTC, ETH...",
+            "type": "Type",
+            "allTypes": "All Types",
+            "dateFrom": "From",
+            "dateTo": "To",
+            "apply": "Filter",
+            "clear": "Clear"
+        },
         "import": {
             "title": "Import Transactions from CSV",
             "description": "Upload a CSV file from your exchange or blockchain explorer. Supports Coinbase, Binance, Etherscan, and generic formats.",

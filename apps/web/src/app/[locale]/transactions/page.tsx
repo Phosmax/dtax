@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { getTransactions, getTransactionExportUrl } from '@/lib/api';
-import type { Transaction } from '@/lib/api';
+import type { Transaction, TransactionFilters } from '@/lib/api';
 import { ImportPanel } from './components/ImportPanel';
 import { ApiSyncPanel } from './components/ApiSyncPanel';
 import { TransactionForm } from './components/TransactionForm';
 import { TransactionTable } from './components/TransactionTable';
+import { FilterBar } from './components/FilterBar';
 
 export default function TransactionsPage() {
     const t = useTranslations('transactions');
@@ -17,14 +18,16 @@ export default function TransactionsPage() {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [activePanel, setActivePanel] = useState<'none' | 'form' | 'import' | 'api'>('none');
+    const filtersRef = useRef<TransactionFilters>({});
 
     useEffect(() => { loadPage(1); }, []);
 
-    async function loadPage(page: number) {
+    async function loadPage(page: number, filters?: TransactionFilters) {
+        if (filters !== undefined) filtersRef.current = filters;
         setLoading(true);
         setLoadError(null);
         try {
-            const res = await getTransactions(page, 20);
+            const res = await getTransactions(page, 20, filtersRef.current);
             setTransactions(res.data);
             setMeta(res.meta);
         } catch (e) {
@@ -35,6 +38,10 @@ export default function TransactionsPage() {
 
     function togglePanel(panel: 'form' | 'import' | 'api') {
         setActivePanel(prev => prev === panel ? 'none' : panel);
+    }
+
+    function handleFilter(filters: TransactionFilters) {
+        loadPage(1, filters);
     }
 
     return (
@@ -59,6 +66,8 @@ export default function TransactionsPage() {
                     </button>
                 </div>
             </div>
+
+            <FilterBar onApply={handleFilter} />
 
             {activePanel === 'import' && (
                 <ImportPanel onImported={() => loadPage(1)} />
@@ -92,7 +101,7 @@ export default function TransactionsPage() {
                 <TransactionTable
                     transactions={transactions}
                     meta={meta}
-                    onPageChange={loadPage}
+                    onPageChange={(p) => loadPage(p)}
                     onRefresh={() => loadPage(meta.page)}
                 />
             )}
