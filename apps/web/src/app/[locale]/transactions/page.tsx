@@ -15,17 +15,21 @@ export default function TransactionsPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 0, limit: 20 });
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [activePanel, setActivePanel] = useState<'none' | 'form' | 'import' | 'api'>('none');
 
     useEffect(() => { loadPage(1); }, []);
 
     async function loadPage(page: number) {
         setLoading(true);
+        setLoadError(null);
         try {
             const res = await getTransactions(page, 20);
             setTransactions(res.data);
             setMeta(res.meta);
-        } catch { /* ignore */ }
+        } catch (e) {
+            setLoadError(e instanceof Error ? e.message : 'Failed to load transactions');
+        }
         setLoading(false);
     }
 
@@ -71,9 +75,15 @@ export default function TransactionsPage() {
                 />
             )}
 
+            {loadError && (
+                <div className="card" style={{ padding: '16px', marginBottom: '16px', background: 'var(--red-bg)', borderRadius: 'var(--radius-sm)', color: 'var(--red-light)', fontSize: '14px' }}>
+                    {loadError}
+                </div>
+            )}
+
             {loading ? (
                 <div className="card loading-pulse" style={{ textAlign: 'center', padding: '48px' }}>{t('loading')}</div>
-            ) : transactions.length === 0 ? (
+            ) : transactions.length === 0 && !loadError ? (
                 <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>📭</div>
                     <p style={{ color: 'var(--text-muted)' }}>{t('noTransactions')}</p>

@@ -19,11 +19,16 @@ export function ApiSyncPanel({ onSynced }: ApiSyncPanelProps) {
 
     useEffect(() => { loadConnections(); }, []);
 
+    const [loadError, setLoadError] = useState<string | null>(null);
+
     async function loadConnections() {
+        setLoadError(null);
         try {
             const res = await getConnections();
             setConnections(res.data);
-        } catch { /* ignore */ }
+        } catch (e) {
+            setLoadError(e instanceof Error ? e.message : 'Failed to load connections');
+        }
     }
 
     async function handleConnectApi(e: React.FormEvent) {
@@ -97,7 +102,12 @@ export function ApiSyncPanel({ onSynced }: ApiSyncPanelProps) {
                 {/* Connection List */}
                 <div>
                     <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>{t('apiSync.myConnections')}</h3>
-                    {connections.length === 0 ? (
+                    {loadError && (
+                        <div style={{ marginBottom: '12px', padding: '12px 16px', background: 'var(--red-bg)', borderRadius: 'var(--radius-sm)', color: 'var(--red-light)', fontSize: '14px' }}>
+                            {loadError}
+                        </div>
+                    )}
+                    {connections.length === 0 && !loadError ? (
                         <div style={{ padding: '24px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', color: 'var(--text-muted)', fontSize: '13px' }}>
                             No active connections
                         </div>

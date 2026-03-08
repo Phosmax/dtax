@@ -23,6 +23,7 @@ export function TransactionTable({ transactions, meta, onPageChange, onRefresh }
     });
     const [submitting, setSubmitting] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     function startEdit(tx: Transaction) {
         const isBuy = BUY_TYPES.includes(tx.type);
@@ -41,6 +42,7 @@ export function TransactionTable({ transactions, meta, onPageChange, onRefresh }
     async function handleUpdate() {
         if (!editingId) return;
         setSubmitting(true);
+        setActionError(null);
         const isBuy = BUY_TYPES.includes(editForm.type);
         const body: Record<string, unknown> = {
             type: editForm.type,
@@ -64,17 +66,22 @@ export function TransactionTable({ transactions, meta, onPageChange, onRefresh }
             await updateTransaction(editingId, body);
             setEditingId(null);
             onRefresh();
-        } catch { /* ignore */ }
+        } catch (e) {
+            setActionError(e instanceof Error ? e.message : 'Update failed');
+        }
         setSubmitting(false);
     }
 
     async function handleDelete(id: string) {
         if (!confirm(t('deleteConfirm'))) return;
         setDeletingId(id);
+        setActionError(null);
         try {
             await deleteTransaction(id);
             onRefresh();
-        } catch { /* ignore */ }
+        } catch (e) {
+            setActionError(e instanceof Error ? e.message : 'Delete failed');
+        }
         setDeletingId(null);
     }
 
@@ -82,6 +89,11 @@ export function TransactionTable({ transactions, meta, onPageChange, onRefresh }
 
     return (
         <>
+            {actionError && (
+                <div style={{ marginBottom: '12px', padding: '12px 16px', background: 'var(--red-bg)', borderRadius: 'var(--radius-sm)', color: 'var(--red-light)', fontSize: '14px' }}>
+                    {actionError}
+                </div>
+            )}
             <div className="table-container">
                 <table>
                     <thead>

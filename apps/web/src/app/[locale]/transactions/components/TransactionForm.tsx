@@ -13,6 +13,7 @@ interface TransactionFormProps {
 export function TransactionForm({ onCreated, onCancel }: TransactionFormProps) {
     const t = useTranslations('transactions');
     const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [form, setForm] = useState({
         type: 'BUY', timestamp: new Date().toISOString().slice(0, 16),
         asset: '', amount: '', valueUsd: '', feeUsd: '', notes: '',
@@ -21,6 +22,7 @@ export function TransactionForm({ onCreated, onCancel }: TransactionFormProps) {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setSubmitting(true);
+        setSubmitError(null);
         const isBuy = BUY_TYPES.includes(form.type);
         const body: Record<string, unknown> = {
             type: form.type, timestamp: new Date(form.timestamp).toISOString(), notes: form.notes || undefined,
@@ -38,7 +40,9 @@ export function TransactionForm({ onCreated, onCancel }: TransactionFormProps) {
         try {
             await createTransaction(body);
             onCreated();
-        } catch { /* ignore */ }
+        } catch (e) {
+            setSubmitError(e instanceof Error ? e.message : 'Failed to save transaction');
+        }
         setSubmitting(false);
     }
 
@@ -74,6 +78,11 @@ export function TransactionForm({ onCreated, onCancel }: TransactionFormProps) {
                     <input type="number" step="any" placeholder="0.00" value={form.feeUsd} onChange={e => setForm({ ...form, feeUsd: e.target.value })} style={inputStyle} />
                 </div>
             </div>
+            {submitError && (
+                <div style={{ marginTop: '12px', padding: '12px 16px', background: 'var(--red-bg)', borderRadius: 'var(--radius-sm)', color: 'var(--red-light)', fontSize: '14px' }}>
+                    {submitError}
+                </div>
+            )}
             <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
                 <button type="submit" className="btn btn-primary" disabled={submitting}>
                     {submitting ? t('saving') : t('save')}
