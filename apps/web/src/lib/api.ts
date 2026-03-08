@@ -77,6 +77,17 @@ export async function createTransaction(tx: Record<string, unknown>) {
     });
 }
 
+export async function updateTransaction(id: string, data: Record<string, unknown>) {
+    return apiFetch<{ data: Transaction }>(`/api/v1/transactions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteTransaction(id: string) {
+    return apiFetch<void>(`/api/v1/transactions/${id}`, { method: 'DELETE' });
+}
+
 export interface ImportResult {
     imported: number;
     errors: { row: number; message: string }[];

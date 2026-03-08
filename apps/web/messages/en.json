@@ -32,6 +32,12 @@
         "saving": "Saving...",
         "noTransactions": "No transactions yet",
         "loading": "Loading transactions...",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": "Delete this transaction? This cannot be undone.",
+        "deleting": "Deleting...",
+        "updating": "Updating...",
+        "actions": "Actions",
         "import": {
             "title": "Import Transactions from CSV",
             "description": "Upload a CSV file from your exchange. Supports Coinbase, Binance, Binance US, and generic formats.",

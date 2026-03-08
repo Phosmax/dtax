@@ -32,6 +32,12 @@
         "saving": "保存中...",
         "noTransactions": "暂无交易记录",
         "loading": "加载交易记录...",
+        "edit": "编辑",
+        "delete": "删除",
+        "deleteConfirm": "确定删除该交易记录？此操作不可撤销。",
+        "deleting": "删除中...",
+        "updating": "更新中...",
+        "actions": "操作",
         "import": {
             "title": "从 CSV 导入交易",
             "description": "上传交易所导出的 CSV 文件。支持 Coinbase、币安国际版、币安美国版及通用格式。",
