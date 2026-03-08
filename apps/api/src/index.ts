@@ -22,6 +22,7 @@ import { priceRoutes } from './routes/prices';
 import { authRoutes } from './routes/auth';
 import { adminRoutes } from './routes/admin';
 import authPlugin from './plugins/auth';
+import { registerSwagger } from './plugins/swagger';
 
 async function main() {
     const app = Fastify({
@@ -87,6 +88,7 @@ async function main() {
         keyGenerator: (request) => request.ip,
     });
     await app.register(authPlugin);
+    await registerSwagger(app);
 
     // Routes
     await app.register(authRoutes, { prefix: '/api/v1' });
