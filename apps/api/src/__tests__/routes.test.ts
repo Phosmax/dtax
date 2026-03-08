@@ -326,8 +326,9 @@ describe('Tax Routes', () => {
         });
 
         mockPrisma.transaction.findMany
-            .mockResolvedValueOnce([buyTx])   // acquisitions
-            .mockResolvedValueOnce([sellTx]); // dispositions
+            .mockResolvedValueOnce([buyTx])   // acquisitions (fetchTaxData)
+            .mockResolvedValueOnce([sellTx])  // dispositions (fetchTaxData)
+            .mockResolvedValueOnce([]);       // income items (calculateIncome)
 
         mockPrisma.taxReport.upsert.mockResolvedValueOnce({
             id: 'report-1',
