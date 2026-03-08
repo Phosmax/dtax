@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { getTransactions, createTransaction, updateTransaction, deleteTransaction, importCsv, createConnection, getConnections, syncConnection } from '@/lib/api';
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, getTransactionExportUrl, importCsv, createConnection, getConnections, syncConnection } from '@/lib/api';
 import type { Transaction, ImportResult } from '@/lib/api';
 
 function formatUsd(v: string | null) {
@@ -225,6 +225,9 @@ export default function TransactionsPage() {
                     <p className="page-subtitle">{t('totalCount', { count: meta.total })}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                    <a href={getTransactionExportUrl()} download className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+                        {t('exportCsv')}
+                    </a>
                     <button className="btn btn-secondary" onClick={() => { setShowApi(!showApi); setShowImport(false); setShowForm(false); loadConnections(); }}>
                         {showApi ? t('cancel') : t('connectApi')}
                     </button>

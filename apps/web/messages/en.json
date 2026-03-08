@@ -26,6 +26,7 @@
         "totalCount": "{count} total transactions",
         "addTransaction": "+ Add Transaction",
         "importCsv": "📁 Import CSV",
+        "exportCsv": "📥 Export CSV",
         "connectApi": "🔌 Connect API",
         "cancel": "✕ Cancel",
         "save": "Save Transaction",

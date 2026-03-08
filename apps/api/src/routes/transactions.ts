@@ -120,6 +120,63 @@ export async function transactionRoutes(app: FastifyInstance) {
         };
     });
 
+    // GET /transactions/export — Export all transactions as CSV
+    app.get('/transactions/export', async (request, reply) => {
+        const query = z.object({
+            from: z.string().datetime().optional(),
+            to: z.string().datetime().optional(),
+        }).parse(request.query);
+
+        const where: Record<string, unknown> = { userId: TEMP_USER_ID };
+        if (query.from || query.to) {
+            where.timestamp = {};
+            if (query.from) (where.timestamp as Record<string, unknown>).gte = new Date(query.from);
+            if (query.to) (where.timestamp as Record<string, unknown>).lte = new Date(query.to);
+        }
+
+        const transactions = await prisma.transaction.findMany({
+            where,
+            orderBy: { timestamp: 'asc' },
+        });
+
+        const headers = [
+            'Date', 'Type', 'Sent Asset', 'Sent Amount', 'Sent Value (USD)',
+            'Received Asset', 'Received Amount', 'Received Value (USD)',
+            'Fee Asset', 'Fee Amount', 'Fee Value (USD)', 'Notes',
+        ];
+
+        const escapeCsv = (val: string | null | undefined): string => {
+            if (val === null || val === undefined) return '';
+            const str = String(val);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        };
+
+        const rows = transactions.map(tx => [
+            tx.timestamp.toISOString(),
+            tx.type,
+            escapeCsv(tx.sentAsset),
+            tx.sentAmount?.toString() || '',
+            tx.sentValueUsd?.toString() || '',
+            escapeCsv(tx.receivedAsset),
+            tx.receivedAmount?.toString() || '',
+            tx.receivedValueUsd?.toString() || '',
+            escapeCsv(tx.feeAsset),
+            tx.feeAmount?.toString() || '',
+            tx.feeValueUsd?.toString() || '',
+            escapeCsv(tx.notes),
+        ].join(','));
+
+        const csv = [headers.join(','), ...rows].join('\n');
+
+        return reply
+            .header('Content-Type', 'text/csv')
+            .header('Content-Disposition', 'attachment; filename="dtax-transactions.csv"')
+            .send(csv);
+    });
+
     // GET /transactions/:id — Get single transaction
     app.get('/transactions/:id', async (request, reply) => {
         const { id } = request.params as { id: string };

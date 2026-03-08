@@ -26,6 +26,7 @@
         "totalCount": "共 {count} 笔交易",
         "addTransaction": "+ 添加交易",
         "importCsv": "📁 导入 CSV",
+        "exportCsv": "📥 导出 CSV",
         "connectApi": "🔌 连接 API",
         "cancel": "✕ 取消",
         "save": "保存交易",

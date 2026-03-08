@@ -77,6 +77,10 @@ export async function createTransaction(tx: Record<string, unknown>) {
     });
 }
 
+export function getTransactionExportUrl() {
+    return `${API_BASE}/api/v1/transactions/export`;
+}
+
 export async function updateTransaction(id: string, data: Record<string, unknown>) {
     return apiFetch<{ data: Transaction }>(`/api/v1/transactions/${id}`, {
         method: 'PUT',
