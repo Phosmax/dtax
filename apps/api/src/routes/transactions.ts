@@ -44,9 +44,6 @@ const listQuerySchema = z.object({
     to: z.string().datetime().optional(),
 });
 
-// ─── Temp User ID (until auth is implemented) ───
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 // ─── Routes ─────────────────────────────────────
 
 export async function transactionRoutes(app: FastifyInstance) {
@@ -57,7 +54,7 @@ export async function transactionRoutes(app: FastifyInstance) {
 
         const transaction = await prisma.transaction.create({
             data: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: body.type,
                 timestamp: new Date(body.timestamp),
                 sentAsset: body.sentAsset,
@@ -87,7 +84,7 @@ export async function transactionRoutes(app: FastifyInstance) {
         const skip = (query.page - 1) * query.limit;
 
         // Build where clause
-        const where: Record<string, unknown> = { userId: TEMP_USER_ID };
+        const where: Record<string, unknown> = { userId: request.userId };
         if (query.type) where.type = query.type;
         if (query.asset) {
             where.OR = [
@@ -129,7 +126,7 @@ export async function transactionRoutes(app: FastifyInstance) {
             to: z.string().datetime().optional(),
         }).parse(request.query);
 
-        const where: Record<string, unknown> = { userId: TEMP_USER_ID };
+        const where: Record<string, unknown> = { userId: request.userId };
         if (query.from || query.to) {
             where.timestamp = {};
             if (query.from) (where.timestamp as Record<string, unknown>).gte = new Date(query.from);
@@ -184,7 +181,7 @@ export async function transactionRoutes(app: FastifyInstance) {
         const { id } = request.params as { id: string };
 
         const transaction = await prisma.transaction.findFirst({
-            where: { id, userId: TEMP_USER_ID },
+            where: { id, userId: request.userId },
         });
 
         if (!transaction) {
@@ -202,7 +199,7 @@ export async function transactionRoutes(app: FastifyInstance) {
         const body = createTransactionSchema.partial().parse(request.body);
 
         const existing = await prisma.transaction.findFirst({
-            where: { id, userId: TEMP_USER_ID },
+            where: { id, userId: request.userId },
         });
 
         if (!existing) {
@@ -227,7 +224,7 @@ export async function transactionRoutes(app: FastifyInstance) {
         const { id } = request.params as { id: string };
 
         const existing = await prisma.transaction.findFirst({
-            where: { id, userId: TEMP_USER_ID },
+            where: { id, userId: request.userId },
         });
 
         if (!existing) {

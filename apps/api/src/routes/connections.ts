@@ -9,8 +9,6 @@ import { prisma } from '../lib/prisma';
 import { DataSourceType, DataSourceStatus } from '@prisma/client';
 import { encryptKey, CcxtService } from '../services/ccxt';
 
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 const ConnectionSchema = z.object({
     exchangeId: z.string().min(1), // e.g., 'binance', 'okx'
     apiKey: z.string().min(5),
@@ -47,7 +45,7 @@ export async function connectionRoutes(app: FastifyInstance) {
         // Store DataSource
         const dataSource = await prisma.dataSource.create({
             data: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: DataSourceType.EXCHANGE_API,
                 name: body.exchangeId.toUpperCase(),
                 status: DataSourceStatus.ACTIVE,
@@ -65,9 +63,9 @@ export async function connectionRoutes(app: FastifyInstance) {
     });
 
     // 2. List all connections
-    app.get('/connections', async (_request, _reply) => {
+    app.get('/connections', async (request, _reply) => {
         const connections = await prisma.dataSource.findMany({
-            where: { userId: TEMP_USER_ID, type: DataSourceType.EXCHANGE_API },
+            where: { userId: request.userId, type: DataSourceType.EXCHANGE_API },
             select: { id: true, name: true, status: true, lastSyncAt: true, createdAt: true },
         });
 
@@ -79,7 +77,7 @@ export async function connectionRoutes(app: FastifyInstance) {
     app.post('/connections/:id/sync', async (request, reply) => {
         const { id } = request.params as { id: string };
 
-        const connection = await prisma.dataSource.findUnique({ where: { id, userId: TEMP_USER_ID } });
+        const connection = await prisma.dataSource.findUnique({ where: { id, userId: request.userId } });
         if (!connection || connection.type !== DataSourceType.EXCHANGE_API) {
             return reply.status(404).send({ error: { message: 'Connection not found' } });
         }

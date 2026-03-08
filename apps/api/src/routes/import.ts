@@ -29,9 +29,6 @@ function txFingerprint(tx: ParsedTransaction): string {
     return 'csv:' + createHash('sha256').update(key).digest('hex').slice(0, 16);
 }
 
-// ─── Temp User ID (until auth is implemented) ───
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 const formatSchema = z.enum(['generic', 'coinbase', 'binance', 'binance_us']).optional();
 
 export async function importRoutes(app: FastifyInstance) {
@@ -104,7 +101,7 @@ export async function importRoutes(app: FastifyInstance) {
         // Check which fingerprints already exist in DB
         const existing = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 externalId: { in: fingerprints },
             },
             select: { externalId: true },
@@ -143,7 +140,7 @@ export async function importRoutes(app: FastifyInstance) {
         const dsName = sourceName || parseResult.summary.format.toUpperCase() + ' Import';
         const dataSource = await prisma.dataSource.create({
             data: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: DataSourceType.CSV_IMPORT,
                 name: dsName,
                 status: DataSourceStatus.ACTIVE,
@@ -152,7 +149,7 @@ export async function importRoutes(app: FastifyInstance) {
 
         // Bulk insert into database with sourceId and externalId
         const dbRecords = newTxs.map(({ tx, fp }) => ({
-            userId: TEMP_USER_ID,
+            userId: request.userId,
             sourceId: dataSource.id,
             externalId: fp,
             type: tx.type,

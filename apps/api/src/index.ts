@@ -18,6 +18,7 @@ import { connectionRoutes } from './routes/connections';
 import { transferRoutes } from './routes/transfers';
 import { portfolioRoutes } from './routes/portfolio';
 import { priceRoutes } from './routes/prices';
+import authPlugin from './plugins/auth';
 
 async function main() {
     const app = Fastify({
@@ -76,6 +77,7 @@ async function main() {
     await app.register(multipart, {
         limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
     });
+    await app.register(authPlugin);
 
     // Routes
     await app.register(healthRoutes, { prefix: '/api' });

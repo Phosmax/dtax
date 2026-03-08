@@ -9,8 +9,6 @@ import { prisma } from '../lib/prisma';
 import { analyzeHoldings } from '@dtax/tax-engine';
 import type { TaxLot, PriceMap } from '@dtax/tax-engine';
 
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 export async function portfolioRoutes(app: FastifyInstance) {
 
     // GET /portfolio/holdings
@@ -35,7 +33,7 @@ export async function portfolioRoutes(app: FastifyInstance) {
         // Get all acquisition transactions (remaining lots)
         const acquisitions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['BUY', 'TRADE', 'AIRDROP', 'STAKING_REWARD', 'MINING_REWARD', 'INTEREST', 'FORK', 'GIFT_RECEIVED'] },
             },
             orderBy: { timestamp: 'asc' },
@@ -44,7 +42,7 @@ export async function portfolioRoutes(app: FastifyInstance) {
         // Get all dispositions to subtract consumed amounts
         const dispositions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['SELL', 'TRADE', 'GIFT_SENT', 'LOST', 'STOLEN'] },
             },
             orderBy: { timestamp: 'asc' },

@@ -12,16 +12,14 @@ import { prisma } from '../lib/prisma';
 import { matchInternalTransfers } from '@dtax/tax-engine';
 import type { TransferRecord } from '@dtax/tax-engine';
 
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 export async function transferRoutes(app: FastifyInstance) {
 
     // GET /transfers/matches — Detect potential internal transfer pairs
-    app.get('/transfers/matches', async (_request, _reply) => {
+    app.get('/transfers/matches', async (request, _reply) => {
         // Fetch all TRANSFER_IN and TRANSFER_OUT that haven't been matched yet
         const transfers = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['TRANSFER_IN', 'TRANSFER_OUT'] },
                 NOT: { tags: { has: 'transfer_reviewed' } },
             },
@@ -80,8 +78,8 @@ export async function transferRoutes(app: FastifyInstance) {
 
         // Verify both transactions exist and belong to user
         const [outTx, inTx] = await Promise.all([
-            prisma.transaction.findFirst({ where: { id: body.outTxId, userId: TEMP_USER_ID } }),
-            prisma.transaction.findFirst({ where: { id: body.inTxId, userId: TEMP_USER_ID } }),
+            prisma.transaction.findFirst({ where: { id: body.outTxId, userId: request.userId } }),
+            prisma.transaction.findFirst({ where: { id: body.inTxId, userId: request.userId } }),
         ]);
 
         if (!outTx || !inTx) {
@@ -122,8 +120,8 @@ export async function transferRoutes(app: FastifyInstance) {
 
         // Verify both transactions exist and belong to user
         const [outTx, inTx] = await Promise.all([
-            prisma.transaction.findFirst({ where: { id: body.outTxId, userId: TEMP_USER_ID } }),
-            prisma.transaction.findFirst({ where: { id: body.inTxId, userId: TEMP_USER_ID } }),
+            prisma.transaction.findFirst({ where: { id: body.outTxId, userId: request.userId } }),
+            prisma.transaction.findFirst({ where: { id: body.inTxId, userId: request.userId } }),
         ]);
 
         if (!outTx || !inTx) {

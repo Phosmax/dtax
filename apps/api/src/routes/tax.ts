@@ -10,8 +10,6 @@ import { prisma } from '../lib/prisma';
 import { CostBasisCalculator, generateForm8949, form8949ToCsv, parse1099DA, reconcile } from '@dtax/tax-engine';
 import type { TaxLot, TaxableEvent, LotDateMap, DtaxDisposition } from '@dtax/tax-engine';
 
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 const calculateSchema = z.object({
     taxYear: z.number().int().min(2009).max(2030),
     method: z.enum(['FIFO', 'LIFO', 'HIFO']).default('FIFO'),
@@ -29,7 +27,7 @@ export async function taxRoutes(app: FastifyInstance) {
         // 1. Get all BUY/AIRDROP/etc transactions to build tax lots
         const acquisitions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['BUY', 'TRADE', 'AIRDROP', 'STAKING_REWARD', 'MINING_REWARD', 'INTEREST', 'FORK', 'GIFT_RECEIVED'] },
                 timestamp: { lt: yearEnd },
             },
@@ -39,7 +37,7 @@ export async function taxRoutes(app: FastifyInstance) {
         // 2. Get all SELL/TRADE dispositions in the tax year
         const dispositions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['SELL', 'TRADE', 'GIFT_SENT', 'LOST', 'STOLEN'] },
                 timestamp: { gte: yearStart, lt: yearEnd },
             },
@@ -93,13 +91,13 @@ export async function taxRoutes(app: FastifyInstance) {
         const report = await prisma.taxReport.upsert({
             where: {
                 userId_taxYear_method: {
-                    userId: TEMP_USER_ID,
+                    userId: request.userId,
                     taxYear: body.taxYear,
                     method: body.method,
                 },
             },
             create: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 taxYear: body.taxYear,
                 method: body.method,
                 shortTermGains,
@@ -152,7 +150,7 @@ export async function taxRoutes(app: FastifyInstance) {
 
         const acquisitions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['BUY', 'TRADE', 'AIRDROP', 'STAKING_REWARD', 'MINING_REWARD', 'INTEREST', 'FORK', 'GIFT_RECEIVED'] },
                 timestamp: { lt: yearEnd },
             },
@@ -161,7 +159,7 @@ export async function taxRoutes(app: FastifyInstance) {
 
         const dispositions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['SELL', 'TRADE', 'GIFT_SENT', 'LOST', 'STOLEN'] },
                 timestamp: { gte: yearStart, lt: yearEnd },
             },
@@ -220,7 +218,7 @@ export async function taxRoutes(app: FastifyInstance) {
         const report = await prisma.taxReport.findUnique({
             where: {
                 userId_taxYear_method: {
-                    userId: TEMP_USER_ID,
+                    userId: request.userId,
                     taxYear: query.year,
                     method: query.method,
                 },
@@ -278,7 +276,7 @@ export async function taxRoutes(app: FastifyInstance) {
 
         const acquisitions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['BUY', 'TRADE', 'AIRDROP', 'STAKING_REWARD', 'MINING_REWARD', 'INTEREST', 'FORK', 'GIFT_RECEIVED'] },
                 timestamp: { lt: yearEnd },
             },
@@ -287,7 +285,7 @@ export async function taxRoutes(app: FastifyInstance) {
 
         const dispositions = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: { in: ['SELL', 'TRADE', 'GIFT_SENT', 'LOST', 'STOLEN'] },
                 timestamp: { gte: yearStart, lt: yearEnd },
             },
@@ -297,7 +295,7 @@ export async function taxRoutes(app: FastifyInstance) {
         // Get internal transfer IDs for misclassification detection
         const internalTransfers = await prisma.transaction.findMany({
             where: {
-                userId: TEMP_USER_ID,
+                userId: request.userId,
                 type: 'INTERNAL_TRANSFER',
                 timestamp: { gte: yearStart, lt: yearEnd },
             },

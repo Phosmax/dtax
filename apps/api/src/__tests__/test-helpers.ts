@@ -7,9 +7,20 @@
 import Fastify from 'fastify';
 import { ZodError } from 'zod';
 
-/** Creates a Fastify app with global error handler (no DB, no plugins) */
+// 引入 auth 插件的类型声明
+import '../plugins/auth';
+
+/** Creates a Fastify app with mocked auth and global error handler (no DB, no plugins) */
 export function buildApp() {
     const app = Fastify({ logger: false });
+
+    // 模拟认证 — 为测试注入默认用户
+    app.decorateRequest('userId', '');
+    app.decorateRequest('userRole', '');
+    app.addHook('onRequest', async (request) => {
+        request.userId = '00000000-0000-0000-0000-000000000001';
+        request.userRole = 'USER';
+    });
 
     // Mirror the global error handler from src/index.ts
     app.setErrorHandler((error: Error, _request, reply) => {
