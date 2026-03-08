@@ -6,6 +6,7 @@
         "taxReport": "税务报告",
         "reconcile": "对账",
         "portfolio": "持仓",
+        "compare": "年度对比",
         "settings": "设置",
         "logout": "退出"
     },
@@ -295,6 +296,21 @@
         "fee": "手续费",
         "gainLoss": "收益/亏损",
         "notes": "备注"
+    },
+    "compare": {
+        "title": "年度对比",
+        "subtitle": "对比多个纳税年度的税务结果",
+        "selectYears": "选择对比年度",
+        "compare": "对比",
+        "noData": "{year} 年无报告，请先计算",
+        "year": "年度",
+        "shortTermGains": "短期收益",
+        "shortTermLosses": "短期亏损",
+        "longTermGains": "长期收益",
+        "longTermLosses": "长期亏损",
+        "netGainLoss": "净收益/亏损",
+        "transactions": "交易数",
+        "noReports": "暂无报告。请先计算至少一个年度的税务。"
     },
     "settings": {
         "title": "设置",

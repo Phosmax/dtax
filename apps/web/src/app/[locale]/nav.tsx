@@ -40,6 +40,9 @@ export function LocaleNav({ locale }: { locale: string }) {
                 <Link href="/reconcile" className={`nav-link ${pathname === '/reconcile' ? 'active' : ''}`}>
                     {t('reconcile')}
                 </Link>
+                <Link href="/compare" className={`nav-link ${pathname === '/compare' ? 'active' : ''}`}>
+                    {t('compare')}
+                </Link>
                 <Link href="/settings" className={`nav-link ${pathname === '/settings' ? 'active' : ''}`}>
                     {t('settings')}
                 </Link>

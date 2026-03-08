@@ -6,6 +6,7 @@
         "taxReport": "Tax Report",
         "reconcile": "Reconcile",
         "portfolio": "Portfolio",
+        "compare": "Compare",
         "settings": "Settings",
         "logout": "Logout"
     },
@@ -295,6 +296,21 @@
         "fee": "Fee",
         "gainLoss": "Gain/Loss",
         "notes": "Notes"
+    },
+    "compare": {
+        "title": "Year-over-Year Comparison",
+        "subtitle": "Compare tax results across multiple years",
+        "selectYears": "Select years to compare",
+        "compare": "Compare",
+        "noData": "No tax report for {year}. Run calculation first.",
+        "year": "Year",
+        "shortTermGains": "ST Gains",
+        "shortTermLosses": "ST Losses",
+        "longTermGains": "LT Gains",
+        "longTermLosses": "LT Losses",
+        "netGainLoss": "Net G/L",
+        "transactions": "Transactions",
+        "noReports": "No tax reports found. Calculate taxes for at least one year first."
     },
     "settings": {
         "title": "Settings",
