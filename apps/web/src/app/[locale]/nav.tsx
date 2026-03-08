@@ -40,6 +40,9 @@ export function LocaleNav({ locale }: { locale: string }) {
                 <Link href="/reconcile" className={`nav-link ${pathname === '/reconcile' ? 'active' : ''}`}>
                     {t('reconcile')}
                 </Link>
+                <Link href="/settings" className={`nav-link ${pathname === '/settings' ? 'active' : ''}`}>
+                    {t('settings')}
+                </Link>
                 <span className="nav-divider" style={{
                     width: '1px', height: '20px', background: 'var(--border)',
                     margin: '0 4px', alignSelf: 'center',

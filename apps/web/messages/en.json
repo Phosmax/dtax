@@ -6,6 +6,7 @@
         "taxReport": "Tax Report",
         "reconcile": "Reconcile",
         "portfolio": "Portfolio",
+        "settings": "Settings",
         "logout": "Logout"
     },
     "auth": {
@@ -294,6 +295,14 @@
         "fee": "Fee",
         "gainLoss": "Gain/Loss",
         "notes": "Notes"
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Configure your tax calculation preferences",
+        "defaultMethod": "Default Cost Basis Method",
+        "defaultYear": "Default Tax Year",
+        "saved": "Settings saved",
+        "save": "Save Settings"
     },
     "common": {
         "loading": "Loading DTax...",

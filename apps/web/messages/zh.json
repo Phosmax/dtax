@@ -6,6 +6,7 @@
         "taxReport": "税务报告",
         "reconcile": "对账",
         "portfolio": "持仓",
+        "settings": "设置",
         "logout": "退出"
     },
     "auth": {
@@ -294,6 +295,14 @@
         "fee": "手续费",
         "gainLoss": "收益/亏损",
         "notes": "备注"
+    },
+    "settings": {
+        "title": "设置",
+        "subtitle": "配置您的税务计算偏好",
+        "defaultMethod": "默认成本计算方法",
+        "defaultYear": "默认纳税年度",
+        "saved": "设置已保存",
+        "save": "保存设置"
     },
     "common": {
         "loading": "加载 DTax...",

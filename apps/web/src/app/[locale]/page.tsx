@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { getTransactions, getTaxSummary, calculateTax } from '@/lib/api';
 import type { Transaction, TaxSummary } from '@/lib/api';
 import { getBadgeClass } from './transactions/components/shared';
+import { getPreferences } from '@/lib/preferences';
 
 function formatUsd(value: number | string | null): string {
   if (value === null || value === undefined) return '—';
@@ -30,9 +31,10 @@ export default function Dashboard() {
   const tf = useTranslations('footer');
   const tType = useTranslations('txTypes');
 
+  const prefs = typeof window !== 'undefined' ? getPreferences() : null;
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear - 1);
-  const [method, setMethod] = useState('FIFO');
+  const [year, setYear] = useState(prefs?.defaultYear ?? currentYear - 1);
+  const [method, setMethod] = useState<string>(prefs?.defaultMethod ?? 'FIFO');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txMeta, setTxMeta] = useState({ total: 0, page: 1, totalPages: 0 });
   const [taxSummary, setTaxSummary] = useState<TaxSummary | null>(null);

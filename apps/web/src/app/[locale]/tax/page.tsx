@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { calculateTax, getForm8949, getForm8949CsvUrl, getScheduleD } from '@/lib/api';
 import type { TaxSummary, Form8949Report, ScheduleDReport } from '@/lib/api';
+import { getPreferences } from '@/lib/preferences';
 
 function formatUsd(v: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
@@ -23,9 +24,10 @@ const labelStyle = {
 export default function TaxPage() {
     const t = useTranslations('tax');
 
+    const prefs = typeof window !== 'undefined' ? getPreferences() : null;
     const currentYear = new Date().getFullYear();
-    const [year, setYear] = useState(currentYear - 1);
-    const [method, setMethod] = useState('FIFO');
+    const [year, setYear] = useState(prefs?.defaultYear ?? currentYear - 1);
+    const [method, setMethod] = useState<string>(prefs?.defaultMethod ?? 'FIFO');
     const [includeWashSales, setIncludeWashSales] = useState(false);
     const [report, setReport] = useState<TaxSummary | null>(null);
     const [form8949, setForm8949] = useState<Form8949Report | null>(null);
