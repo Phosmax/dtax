@@ -96,6 +96,7 @@ export function ImportPanel({ onImported }: ImportPanelProps) {
                     </p>
                     <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>
                         Format: {importResult.summary.format} · {importResult.summary.totalRows} rows · {importResult.summary.parsed} parsed
+                        {importResult.skipped ? ` · ${t('import.skipped', { count: importResult.skipped })}` : ''}
                     </p>
                     {importResult.errors.length > 0 && (
                         <div style={{ marginTop: '8px', padding: '8px 12px', background: 'var(--yellow-bg)', borderRadius: 'var(--radius-sm)' }}>

@@ -94,6 +94,7 @@ export async function deleteTransaction(id: string) {
 
 export interface ImportResult {
     imported: number;
+    skipped?: number;
     errors: { row: number; message: string }[];
     summary: {
         totalRows: number;

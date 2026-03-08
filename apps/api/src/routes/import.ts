@@ -4,14 +4,30 @@
  *
  * Supports: Coinbase, Binance International, Binance US, Generic
  * Auto-detects format or accepts ?format= query parameter
+ * Deduplication: generates content fingerprints stored in externalId
  */
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { createHash } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { DataSourceType, DataSourceStatus } from '@prisma/client';
 import { parseCsv } from '@dtax/tax-engine';
 import type { CsvFormat, ParsedTransaction } from '@dtax/tax-engine';
+
+/** Generate a deterministic fingerprint for a parsed transaction */
+function txFingerprint(tx: ParsedTransaction): string {
+    const key = [
+        tx.type,
+        tx.timestamp,
+        tx.sentAsset || '',
+        tx.sentAmount?.toString() || '',
+        tx.receivedAsset || '',
+        tx.receivedAmount?.toString() || '',
+        tx.feeAmount?.toString() || '',
+    ].join('|');
+    return 'csv:' + createHash('sha256').update(key).digest('hex').slice(0, 16);
+}
 
 // ─── Temp User ID (until auth is implemented) ───
 const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
@@ -82,6 +98,47 @@ export async function importRoutes(app: FastifyInstance) {
             });
         }
 
+        // Generate fingerprints for deduplication
+        const fingerprints = parseResult.transactions.map(tx => txFingerprint(tx));
+
+        // Check which fingerprints already exist in DB
+        const existing = await prisma.transaction.findMany({
+            where: {
+                userId: TEMP_USER_ID,
+                externalId: { in: fingerprints },
+            },
+            select: { externalId: true },
+        });
+        const existingSet = new Set(existing.map(e => e.externalId));
+
+        // Filter out duplicates
+        const newTxs: { tx: ParsedTransaction; fp: string }[] = [];
+        let skipped = 0;
+        for (let i = 0; i < parseResult.transactions.length; i++) {
+            if (existingSet.has(fingerprints[i])) {
+                skipped++;
+            } else {
+                newTxs.push({ tx: parseResult.transactions[i], fp: fingerprints[i] });
+            }
+        }
+
+        if (newTxs.length === 0) {
+            return reply.status(200).send({
+                data: {
+                    imported: 0,
+                    skipped,
+                    errors: parseResult.errors.slice(0, 10),
+                    summary: parseResult.summary,
+                },
+                meta: {
+                    requestId: request.id,
+                    timestamp: new Date().toISOString(),
+                    format: parseResult.summary.format,
+                    message: 'All transactions already imported',
+                },
+            });
+        }
+
         // Create a DataSource to track the import origin
         const dsName = sourceName || parseResult.summary.format.toUpperCase() + ' Import';
         const dataSource = await prisma.dataSource.create({
@@ -93,10 +150,11 @@ export async function importRoutes(app: FastifyInstance) {
             },
         });
 
-        // Bulk insert into database with sourceId
-        const dbRecords = parseResult.transactions.map((tx: ParsedTransaction) => ({
+        // Bulk insert into database with sourceId and externalId
+        const dbRecords = newTxs.map(({ tx, fp }) => ({
             userId: TEMP_USER_ID,
             sourceId: dataSource.id,
+            externalId: fp,
             type: tx.type,
             timestamp: new Date(tx.timestamp),
             receivedAsset: tx.receivedAsset || null,
@@ -119,6 +177,7 @@ export async function importRoutes(app: FastifyInstance) {
         return reply.status(201).send({
             data: {
                 imported: created.count,
+                skipped,
                 errors: parseResult.errors.slice(0, 10),
                 summary: parseResult.summary,
                 sourceId: dataSource.id,

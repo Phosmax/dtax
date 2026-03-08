@@ -123,6 +123,7 @@ model Transaction {
 
   @@index([userId, timestamp])
   @@index([userId, type])
+  @@index([userId, externalId])
   @@index([sentAsset])
   @@index([receivedAsset])
   @@map("transactions")
