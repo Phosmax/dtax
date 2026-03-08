@@ -179,12 +179,43 @@ export interface Form8949Report {
     totals: { shortTermGainLoss: number; longTermGainLoss: number; totalGainLoss: number; totalProceeds: number; totalCostBasis: number; lineCount: number };
 }
 
-export async function getForm8949(year: number, method = 'FIFO') {
-    return apiFetch<{ data: Form8949Report }>(`/api/v1/tax/form8949?year=${year}&method=${method}`);
+export async function getForm8949(year: number, method = 'FIFO', includeWashSales = false) {
+    const ws = includeWashSales ? '&includeWashSales=true' : '';
+    return apiFetch<{ data: Form8949Report & { washSaleSummary?: { totalDisallowed: number; adjustmentCount: number } } }>(
+        `/api/v1/tax/form8949?year=${year}&method=${method}${ws}`
+    );
 }
 
-export function getForm8949CsvUrl(year: number, method = 'FIFO') {
-    return `${API_BASE}/api/v1/tax/form8949?year=${year}&method=${method}&format=csv`;
+export function getForm8949CsvUrl(year: number, method = 'FIFO', includeWashSales = false) {
+    const ws = includeWashSales ? '&includeWashSales=true' : '';
+    return `${API_BASE}/api/v1/tax/form8949?year=${year}&method=${method}&format=csv${ws}`;
+}
+
+// ─── Schedule D ─────────────────────────────────
+
+export interface ScheduleDLine {
+    lineNumber: string;
+    description: string;
+    proceeds: number;
+    costBasis: number;
+    adjustments: number;
+    gainLoss: number;
+}
+
+export interface ScheduleDReport {
+    taxYear: number;
+    partI: ScheduleDLine[];
+    partII: ScheduleDLine[];
+    netShortTerm: number;
+    netLongTerm: number;
+    combinedNetGainLoss: number;
+    capitalLossDeduction: number;
+    carryoverLoss: number;
+}
+
+export async function getScheduleD(year: number, method = 'FIFO', includeWashSales = false) {
+    const ws = includeWashSales ? '&includeWashSales=true' : '';
+    return apiFetch<{ data: ScheduleDReport }>(`/api/v1/tax/schedule-d?year=${year}&method=${method}${ws}`);
 }
 
 // ─── 1099-DA Reconciliation ────────────────────

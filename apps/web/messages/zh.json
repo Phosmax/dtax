@@ -151,6 +151,24 @@
         "longTerm": "长期（> 1 年）",
         "total": "合计",
         "disclaimer": "⚠️ 本报告仅供参考，不构成税务建议。请咨询专业税务顾问了解您的具体情况。",
+        "includeWashSales": "包含洗售检测",
+        "washSale": {
+            "title": "洗售调整",
+            "detected": "检测到 {count} 笔洗售",
+            "totalDisallowed": "不可抵扣亏损总额",
+            "codeW": "代码 W = 洗售规则不可抵扣亏损"
+        },
+        "scheduleD": {
+            "title": "Schedule D 汇总",
+            "partI": "第一部分 — 短期资本利得与亏损",
+            "partII": "第二部分 — 长期资本利得与亏损",
+            "line": "行",
+            "netShortTerm": "短期净额（第 7 行）",
+            "netLongTerm": "长期净额（第 15 行）",
+            "combined": "合计净收益/亏损（第 16 行）",
+            "lossDeduction": "资本亏损抵扣额（上限 $3,000）",
+            "carryover": "结转至下一年度的亏损"
+        },
         "form8949": {
             "title": "IRS Form 8949 — 资产销售与处置",
             "downloadCsv": "下载 CSV",

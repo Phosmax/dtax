@@ -151,6 +151,24 @@
         "longTerm": "Long-Term (> 1 year)",
         "total": "TOTAL",
         "disclaimer": "⚠️ This is for informational purposes only and does not constitute tax advice. Consult a qualified tax professional for your specific situation.",
+        "includeWashSales": "Include Wash Sales",
+        "washSale": {
+            "title": "Wash Sale Adjustments",
+            "detected": "{count} wash sales detected",
+            "totalDisallowed": "Total Disallowed Loss",
+            "codeW": "Code W = Wash sale loss disallowed"
+        },
+        "scheduleD": {
+            "title": "Schedule D Summary",
+            "partI": "Part I — Short-Term Capital Gains and Losses",
+            "partII": "Part II — Long-Term Capital Gains and Losses",
+            "line": "Line",
+            "netShortTerm": "Net Short-Term (Line 7)",
+            "netLongTerm": "Net Long-Term (Line 15)",
+            "combined": "Combined Net Gain/Loss (Line 16)",
+            "lossDeduction": "Capital Loss Deduction (max $3,000)",
+            "carryover": "Loss Carryover to Next Year"
+        },
         "form8949": {
             "title": "IRS Form 8949 — Sales and Dispositions",
             "downloadCsv": "Download CSV",

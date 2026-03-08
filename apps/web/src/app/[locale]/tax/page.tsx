@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { calculateTax, getForm8949, getForm8949CsvUrl } from '@/lib/api';
-import type { TaxSummary, Form8949Report } from '@/lib/api';
+import { calculateTax, getForm8949, getForm8949CsvUrl, getScheduleD } from '@/lib/api';
+import type { TaxSummary, Form8949Report, ScheduleDReport } from '@/lib/api';
 
 function formatUsd(v: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
@@ -26,8 +26,11 @@ export default function TaxPage() {
     const currentYear = new Date().getFullYear();
     const [year, setYear] = useState(currentYear - 1);
     const [method, setMethod] = useState('FIFO');
+    const [includeWashSales, setIncludeWashSales] = useState(false);
     const [report, setReport] = useState<TaxSummary | null>(null);
     const [form8949, setForm8949] = useState<Form8949Report | null>(null);
+    const [washSaleSummary, setWashSaleSummary] = useState<{ totalDisallowed: number; adjustmentCount: number } | null>(null);
+    const [scheduleD, setScheduleD] = useState<ScheduleDReport | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -35,12 +38,15 @@ export default function TaxPage() {
         setLoading(true);
         setError(null);
         try {
-            const [taxRes, f8949Res] = await Promise.all([
+            const [taxRes, f8949Res, schDRes] = await Promise.all([
                 calculateTax(year, method),
-                getForm8949(year, method),
+                getForm8949(year, method, includeWashSales),
+                getScheduleD(year, method, includeWashSales),
             ]);
             setReport(taxRes.data.report);
             setForm8949(f8949Res.data);
+            setWashSaleSummary(f8949Res.data.washSaleSummary || null);
+            setScheduleD(schDRes.data);
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed');
         }
@@ -72,6 +78,18 @@ export default function TaxPage() {
                             <option value="HIFO">{t('hifo')}</option>
                         </select>
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '2px' }}>
+                        <input
+                            type="checkbox"
+                            id="washSaleToggle"
+                            checked={includeWashSales}
+                            onChange={e => setIncludeWashSales(e.target.checked)}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="washSaleToggle" style={{ fontSize: '14px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            {t('includeWashSales')}
+                        </label>
+                    </div>
                     <button className="btn btn-primary" onClick={handleCalculate} disabled={loading}>
                         {loading ? `⏳ ${t('calculating')}` : `🧮 ${t('calculate')}`}
                     </button>
@@ -98,6 +116,7 @@ export default function TaxPage() {
                         </div>
                     </div>
 
+                    {/* Capital Gains Breakdown */}
                     <div className="card">
                         <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px' }}>{t('breakdown')}</h3>
                         <div className="table-container" style={{ border: 'none' }}>
@@ -137,13 +156,145 @@ export default function TaxPage() {
                         </div>
                     </div>
 
+                    {/* Wash Sale Summary */}
+                    {washSaleSummary && washSaleSummary.adjustmentCount > 0 && (
+                        <div className="card" style={{ marginTop: '24px', borderLeft: '3px solid var(--yellow)' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
+                                {t('washSale.title')}
+                            </h3>
+                            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                                <div>
+                                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                                        {t('washSale.detected', { count: washSaleSummary.adjustmentCount })}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('washSale.totalDisallowed')}: </span>
+                                    <span style={{ fontWeight: 600, color: 'var(--yellow)' }}>{formatUsd(washSaleSummary.totalDisallowed)}</span>
+                                </div>
+                            </div>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                {t('washSale.codeW')}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Schedule D */}
+                    {scheduleD && (
+                        <div className="card" style={{ marginTop: '24px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px' }}>{t('scheduleD.title')}</h3>
+
+                            {/* Part I: Short-term */}
+                            <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                                {t('scheduleD.partI')}
+                            </h4>
+                            <div className="table-container" style={{ border: 'none', marginBottom: '20px' }}>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>{t('scheduleD.line')}</th>
+                                            <th>{t('form8949.description')}</th>
+                                            <th style={{ textAlign: 'right' }}>{t('form8949.proceeds')}</th>
+                                            <th style={{ textAlign: 'right' }}>{t('form8949.basis')}</th>
+                                            <th style={{ textAlign: 'right' }}>{t('form8949.gainLoss')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {scheduleD.partI.map(line => (
+                                            <tr key={line.lineNumber}>
+                                                <td style={{ fontWeight: 600, width: '60px' }}>{line.lineNumber}</td>
+                                                <td style={{ fontSize: '13px' }}>{line.description}</td>
+                                                <td style={{ textAlign: 'right', fontSize: '13px' }}>{line.proceeds ? formatUsd(line.proceeds) : '—'}</td>
+                                                <td style={{ textAlign: 'right', fontSize: '13px' }}>{line.costBasis ? formatUsd(line.costBasis) : '—'}</td>
+                                                <td style={{ textAlign: 'right', fontSize: '13px', fontWeight: 600, color: line.gainLoss >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                                    {line.gainLoss ? formatUsd(line.gainLoss) : '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        <tr style={{ background: 'var(--bg-surface)' }}>
+                                            <td colSpan={4} style={{ fontWeight: 700 }}>{t('scheduleD.netShortTerm')}</td>
+                                            <td style={{ textAlign: 'right', fontWeight: 700, color: scheduleD.netShortTerm >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                                {formatUsd(scheduleD.netShortTerm)}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Part II: Long-term */}
+                            <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                                {t('scheduleD.partII')}
+                            </h4>
+                            <div className="table-container" style={{ border: 'none', marginBottom: '20px' }}>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>{t('scheduleD.line')}</th>
+                                            <th>{t('form8949.description')}</th>
+                                            <th style={{ textAlign: 'right' }}>{t('form8949.proceeds')}</th>
+                                            <th style={{ textAlign: 'right' }}>{t('form8949.basis')}</th>
+                                            <th style={{ textAlign: 'right' }}>{t('form8949.gainLoss')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {scheduleD.partII.map(line => (
+                                            <tr key={line.lineNumber}>
+                                                <td style={{ fontWeight: 600, width: '60px' }}>{line.lineNumber}</td>
+                                                <td style={{ fontSize: '13px' }}>{line.description}</td>
+                                                <td style={{ textAlign: 'right', fontSize: '13px' }}>{line.proceeds ? formatUsd(line.proceeds) : '—'}</td>
+                                                <td style={{ textAlign: 'right', fontSize: '13px' }}>{line.costBasis ? formatUsd(line.costBasis) : '—'}</td>
+                                                <td style={{ textAlign: 'right', fontSize: '13px', fontWeight: 600, color: line.gainLoss >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                                    {line.gainLoss ? formatUsd(line.gainLoss) : '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        <tr style={{ background: 'var(--bg-surface)' }}>
+                                            <td colSpan={4} style={{ fontWeight: 700 }}>{t('scheduleD.netLongTerm')}</td>
+                                            <td style={{ textAlign: 'right', fontWeight: 700, color: scheduleD.netLongTerm >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                                {formatUsd(scheduleD.netLongTerm)}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Combined + Loss deduction */}
+                            <div style={{ padding: '16px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <span style={{ fontWeight: 600 }}>{t('scheduleD.combined')}</span>
+                                    <span style={{ fontWeight: 700, fontSize: '16px', color: scheduleD.combinedNetGainLoss >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                                        {formatUsd(scheduleD.combinedNetGainLoss)}
+                                    </span>
+                                </div>
+                                {scheduleD.capitalLossDeduction > 0 && (
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '14px' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>{t('scheduleD.lossDeduction')}</span>
+                                            <span style={{ color: 'var(--red)', fontWeight: 600 }}>
+                                                ({formatUsd(scheduleD.capitalLossDeduction)})
+                                            </span>
+                                        </div>
+                                        {scheduleD.carryoverLoss > 0 && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>{t('scheduleD.carryover')}</span>
+                                                <span style={{ color: 'var(--yellow)', fontWeight: 600 }}>
+                                                    {formatUsd(scheduleD.carryoverLoss)}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Form 8949 Section */}
                     {form8949 && form8949.lines.length > 0 && (
                         <div className="card" style={{ marginTop: '24px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                 <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{t('form8949.title')}</h3>
                                 <a
-                                    href={getForm8949CsvUrl(year, method)}
+                                    href={getForm8949CsvUrl(year, method, includeWashSales)}
                                     download
                                     className="btn btn-primary"
                                     style={{ fontSize: '13px', textDecoration: 'none' }}
@@ -188,14 +339,23 @@ export default function TaxPage() {
                                     </thead>
                                     <tbody>
                                         {form8949.lines.map((line) => (
-                                            <tr key={line.eventId}>
+                                            <tr key={line.eventId} style={line.adjustmentCode.includes('W') ? { background: 'rgba(255,193,7,0.08)' } : undefined}>
                                                 <td><span style={{
                                                     display: 'inline-block', width: '24px', height: '24px',
                                                     lineHeight: '24px', textAlign: 'center',
                                                     background: 'var(--bg-surface)', borderRadius: '4px',
                                                     fontSize: '12px', fontWeight: 600,
                                                 }}>{line.box}</span></td>
-                                                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}>{line.description}</td>
+                                                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
+                                                    {line.description}
+                                                    {line.adjustmentCode.includes('W') && (
+                                                        <span style={{
+                                                            marginLeft: '6px', fontSize: '10px', fontWeight: 600,
+                                                            padding: '2px 6px', borderRadius: '3px',
+                                                            background: 'rgba(255,193,7,0.2)', color: 'var(--yellow)',
+                                                        }}>W</span>
+                                                    )}
+                                                </td>
                                                 <td style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{line.dateAcquired}</td>
                                                 <td style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{line.dateSold}</td>
                                                 <td style={{ textAlign: 'right', fontSize: '13px' }}>{formatUsd(line.proceeds)}</td>
