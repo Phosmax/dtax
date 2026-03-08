@@ -2,11 +2,17 @@
  * API client for DTax backend.
  */
 
+import { getStoredToken } from './auth-context';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+    const token = getStoredToken();
+    const authHeaders: Record<string, string> = {};
+    if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch(`${API_BASE}${path}`, {
-        headers: { 'Content-Type': 'application/json', ...options?.headers },
+        headers: { 'Content-Type': 'application/json', ...authHeaders, ...options?.headers },
         ...options,
     });
     if (!res.ok) {
@@ -116,8 +122,13 @@ export async function importCsv(file: File, format?: string, source?: string): P
         ? `${API_BASE}/api/v1/transactions/import?${qs}`
         : `${API_BASE}/api/v1/transactions/import`;
 
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch(url, {
         method: 'POST',
+        headers,
         body: formData,
     });
 

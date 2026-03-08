@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { usePathname, Link } from '@/i18n/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 export function LocaleNav({ locale }: { locale: string }) {
     const t = useTranslations('nav');
@@ -9,6 +10,7 @@ export function LocaleNav({ locale }: { locale: string }) {
     const currentLocale = useLocale();
     const otherLocale = currentLocale === 'en' ? 'zh' : 'en';
     const otherLabel = currentLocale === 'en' ? '中文' : 'EN';
+    const { user, logout } = useAuth();
 
     return (
         <nav className="nav">
@@ -45,6 +47,23 @@ export function LocaleNav({ locale }: { locale: string }) {
                 <Link href={pathname} locale={otherLocale} className="nav-link locale-switch">
                     {otherLabel}
                 </Link>
+                {user && (
+                    <>
+                        <span className="nav-divider" style={{
+                            width: '1px', height: '20px', background: 'var(--border)',
+                            margin: '0 4px', alignSelf: 'center',
+                        }} />
+                        <span style={{ color: 'var(--text-muted)', fontSize: '13px', alignSelf: 'center' }}>
+                            {user.email}
+                        </span>
+                        <button onClick={logout} className="nav-link" style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'var(--text-muted)', fontSize: '13px',
+                        }}>
+                            {t('logout')}
+                        </button>
+                    </>
+                )}
             </div>
         </nav>
     );

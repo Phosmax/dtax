@@ -5,7 +5,21 @@
         "transfers": "Transfers",
         "taxReport": "Tax Report",
         "reconcile": "Reconcile",
-        "portfolio": "Portfolio"
+        "portfolio": "Portfolio",
+        "logout": "Logout"
+    },
+    "auth": {
+        "login": "Login",
+        "register": "Register",
+        "loginSubtitle": "Sign in to your account",
+        "registerSubtitle": "Create a new account",
+        "emailPlaceholder": "Email address",
+        "passwordPlaceholder": "Password (min 8 characters)",
+        "namePlaceholder": "Name (optional)",
+        "loginBtn": "Sign In",
+        "registerBtn": "Create Account",
+        "submitting": "Please wait...",
+        "failed": "Operation failed"
     },
     "dashboard": {
         "title": "Dashboard",

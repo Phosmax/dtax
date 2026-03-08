@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import "../globals.css";
 import { LocaleNav } from './nav';
+import { AuthProvider } from '@/lib/auth-context';
+import { AuthGuard } from './auth-guard';
 
 export const metadata: Metadata = {
   title: "DTax — AI-Powered Crypto Tax Intelligence",
@@ -31,10 +33,14 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale}>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <div className="container">
-            <LocaleNav locale={locale} />
-            {children}
-          </div>
+          <AuthProvider>
+            <AuthGuard>
+              <div className="container">
+                <LocaleNav locale={locale} />
+                {children}
+              </div>
+            </AuthGuard>
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>
