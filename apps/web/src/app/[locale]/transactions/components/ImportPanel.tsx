@@ -84,6 +84,7 @@ export function ImportPanel({ onImported }: ImportPanelProps) {
                         <option value="bybit">Bybit</option>
                         <option value="gate">Gate.io</option>
                         <option value="bitget">Bitget</option>
+                        <option value="mexc">MEXC</option>
                         <option value="etherscan">Etherscan (ETH Transactions)</option>
                         <option value="etherscan_erc20">Etherscan (ERC-20 Tokens)</option>
                         <option value="generic">Generic CSV</option>
