@@ -19,13 +19,20 @@ const mockPrisma = {
     update: vi.fn(),
     delete: vi.fn(),
     createMany: vi.fn(),
+    updateMany: vi.fn(),
+    groupBy: vi.fn(),
   },
   taxReport: {
     upsert: vi.fn(),
     findUnique: vi.fn(),
   },
   dataSource: {
+    create: vi.fn(),
     findMany: vi.fn(),
+    findFirst: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    findUnique: vi.fn(),
   },
   $queryRaw: vi.fn(),
 };
@@ -523,5 +530,411 @@ describe("Portfolio Routes", () => {
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
     expect(body.error.message).toContain("Invalid prices format");
+  });
+});
+
+describe("Connection Routes", () => {
+  let app: ReturnType<typeof buildApp>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    app = buildApp();
+    const { connectionRoutes } = await import("../routes/connections");
+    await app.register(connectionRoutes, { prefix: "/api/v1" });
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  // ─── POST /connections ─────────────────────
+
+  it("POST /connections creates connection with valid keys", async () => {
+    const { CcxtService } = await import("../services/ccxt");
+    (CcxtService.testConnection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+
+    mockPrisma.dataSource.create.mockResolvedValueOnce({
+      id: "ds-001",
+      name: "BINANCE",
+      status: "ACTIVE",
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/connections",
+      payload: {
+        exchangeId: "binance",
+        apiKey: "test-api-key-12345",
+        apiSecret: "test-api-secret-12345",
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.data.id).toBe("ds-001");
+    expect(body.data.name).toBe("BINANCE");
+    expect(body.data.status).toBe("ACTIVE");
+  });
+
+  it("POST /connections returns 400 for invalid API keys", async () => {
+    const { CcxtService } = await import("../services/ccxt");
+    (CcxtService.testConnection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/connections",
+      payload: {
+        exchangeId: "binance",
+        apiKey: "bad-key-12345",
+        apiSecret: "bad-secret-12345",
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.error.code).toBe("INVALID_API_KEYS");
+  });
+
+  it("POST /connections rejects missing exchangeId", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/connections",
+      payload: {
+        apiKey: "test-api-key-12345",
+        apiSecret: "test-api-secret-12345",
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /connections rejects short apiKey", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/connections",
+      payload: {
+        exchangeId: "binance",
+        apiKey: "ab",
+        apiSecret: "test-api-secret-12345",
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  // ─── GET /connections ──────────────────────
+
+  it("GET /connections returns user connections", async () => {
+    mockPrisma.dataSource.findMany.mockResolvedValueOnce([
+      {
+        id: "ds-001",
+        name: "BINANCE",
+        status: "ACTIVE",
+        lastSyncAt: null,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/connections",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].name).toBe("BINANCE");
+  });
+
+  // ─── GET /data-sources ────────────────────
+
+  it("GET /data-sources returns sources with transaction counts", async () => {
+    mockPrisma.dataSource.findMany.mockResolvedValueOnce([
+      {
+        id: "ds-001",
+        name: "BINANCE",
+        type: "EXCHANGE_API",
+        status: "ACTIVE",
+        lastSyncAt: null,
+        createdAt: new Date(),
+      },
+      {
+        id: "ds-002",
+        name: "COINBASE Import",
+        type: "CSV_IMPORT",
+        status: "ACTIVE",
+        lastSyncAt: null,
+        createdAt: new Date(),
+      },
+    ]);
+    mockPrisma.transaction.groupBy.mockResolvedValueOnce([
+      { sourceId: "ds-002", _count: 15 },
+    ]);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/data-sources",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data).toHaveLength(2);
+    expect(body.data[0].transactionCount).toBeDefined();
+    // ds-002 has 15 transactions
+    const csvSource = body.data.find(
+      (s: { id: string }) => s.id === "ds-002",
+    );
+    expect(csvSource.transactionCount).toBe(15);
+  });
+
+  // ─── PUT /data-sources/:id ────────────────
+
+  it("PUT /data-sources/:id renames source", async () => {
+    mockPrisma.dataSource.findFirst.mockResolvedValueOnce({
+      id: "ds-001",
+      userId: "00000000-0000-0000-0000-000000000001",
+    });
+    mockPrisma.dataSource.update.mockResolvedValueOnce({
+      id: "ds-001",
+      name: "My Binance",
+    });
+
+    const res = await app.inject({
+      method: "PUT",
+      url: "/api/v1/data-sources/ds-001",
+      payload: { name: "My Binance" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data.name).toBe("My Binance");
+  });
+
+  it("PUT /data-sources/:id returns 404 for missing source", async () => {
+    mockPrisma.dataSource.findFirst.mockResolvedValueOnce(null);
+
+    const res = await app.inject({
+      method: "PUT",
+      url: "/api/v1/data-sources/nonexistent",
+      payload: { name: "Test" },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  // ─── DELETE /data-sources/:id ─────────────
+
+  it("DELETE /data-sources/:id unlinks and deletes", async () => {
+    mockPrisma.dataSource.findFirst.mockResolvedValueOnce({
+      id: "ds-001",
+      userId: "00000000-0000-0000-0000-000000000001",
+    });
+    mockPrisma.transaction.updateMany.mockResolvedValueOnce({ count: 5 });
+    mockPrisma.dataSource.delete.mockResolvedValueOnce({});
+
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/data-sources/ds-001",
+    });
+
+    expect(res.statusCode).toBe(204);
+    // Verify transactions were unlinked before deletion
+    expect(mockPrisma.transaction.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ sourceId: "ds-001" }),
+        data: { sourceId: null },
+      }),
+    );
+  });
+
+  it("DELETE /data-sources/:id returns 404 for missing", async () => {
+    mockPrisma.dataSource.findFirst.mockResolvedValueOnce(null);
+
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/data-sources/nonexistent",
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  // ─── POST /connections/:id/sync ───────────
+
+  it("POST /connections/:id/sync marks connection as synced", async () => {
+    mockPrisma.dataSource.findUnique.mockResolvedValueOnce({
+      id: "ds-001",
+      userId: "00000000-0000-0000-0000-000000000001",
+      type: "EXCHANGE_API",
+    });
+    mockPrisma.dataSource.update.mockResolvedValueOnce({
+      id: "ds-001",
+      status: "ACTIVE",
+      lastSyncAt: new Date(),
+    });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/connections/ds-001/sync",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data.status).toBe("SYNCED_SUCCESSFULLY");
+  });
+
+  it("POST /connections/:id/sync returns 404 for missing connection", async () => {
+    mockPrisma.dataSource.findUnique.mockResolvedValueOnce(null);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/connections/nonexistent/sync",
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+});
+
+describe("Import Routes", () => {
+  let app: ReturnType<typeof buildApp>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    app = buildApp();
+    // Register text/csv and text/plain content type parsers (matching main app behavior)
+    app.addContentTypeParser(
+      ["text/csv", "text/plain"],
+      { parseAs: "string" },
+      (_req: unknown, body: string, done: (err: null, body: string) => void) => {
+        done(null, body);
+      },
+    );
+    const { importRoutes } = await import("../routes/import");
+    await app.register(importRoutes, { prefix: "/api/v1" });
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  const COINBASE_CSV = `"Timestamp","Transaction Type","Asset","Quantity Transacted","Spot Price Currency","Spot Price at Transaction","Subtotal","Total (inclusive of fees and/or spread)","Fees and/or Spread","Notes"
+"2024-01-15T10:30:00Z","Buy","BTC","0.5","USD","43000","21500","21625","125","Bought Bitcoin"`;
+
+  // ─── POST /transactions/import (text/csv) ──
+
+  it("POST /transactions/import parses Coinbase CSV", async () => {
+    // No existing fingerprints
+    mockPrisma.transaction.findMany.mockResolvedValueOnce([]);
+    mockPrisma.dataSource.create.mockResolvedValueOnce({
+      id: "ds-import-001",
+      name: "COINBASE Import",
+    });
+    mockPrisma.transaction.createMany.mockResolvedValueOnce({ count: 1 });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/import",
+      headers: { "content-type": "text/csv" },
+      payload: COINBASE_CSV,
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.data.imported).toBe(1);
+    expect(body.data.skipped).toBe(0);
+    expect(body.data.summary.format).toBe("coinbase");
+    expect(body.data.sourceId).toBe("ds-import-001");
+  });
+
+  it("POST /transactions/import deduplicates existing transactions", async () => {
+    // Return matching fingerprints so all txs are skipped
+    mockPrisma.transaction.findMany.mockImplementationOnce(
+      async ({ where }: { where: { externalId: { in: string[] } } }) => {
+        return where.externalId.in.map((fp: string) => ({
+          externalId: fp,
+        }));
+      },
+    );
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/import",
+      headers: { "content-type": "text/csv" },
+      payload: COINBASE_CSV,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data.imported).toBe(0);
+    expect(body.data.skipped).toBe(1);
+  });
+
+  it("POST /transactions/import rejects empty body", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/import",
+      headers: { "content-type": "text/csv" },
+      payload: "",
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.error.code).toBe("EMPTY_FILE");
+  });
+
+  it("POST /transactions/import rejects invalid content type", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/import",
+      headers: { "content-type": "application/json" },
+      payload: JSON.stringify({ data: "test" }),
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.error.code).toBe("INVALID_CONTENT_TYPE");
+  });
+
+  it("POST /transactions/import accepts format override", async () => {
+    const genericCsv = `Type,Timestamp,Received Asset,Received Amount
+BUY,2024-01-15T00:00:00Z,BTC,0.5`;
+
+    mockPrisma.transaction.findMany.mockResolvedValueOnce([]);
+    mockPrisma.dataSource.create.mockResolvedValueOnce({
+      id: "ds-import-002",
+      name: "GENERIC Import",
+    });
+    mockPrisma.transaction.createMany.mockResolvedValueOnce({ count: 1 });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/import?format=generic",
+      headers: { "content-type": "text/csv" },
+      payload: genericCsv,
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.data.summary.format).toBe("generic");
+    expect(body.data.imported).toBe(1);
+  });
+
+  it("POST /transactions/import with custom source name", async () => {
+    mockPrisma.transaction.findMany.mockResolvedValueOnce([]);
+    mockPrisma.dataSource.create.mockResolvedValueOnce({
+      id: "ds-import-003",
+      name: "My Coinbase 2024",
+    });
+    mockPrisma.transaction.createMany.mockResolvedValueOnce({ count: 1 });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/transactions/import?source=My%20Coinbase%202024",
+      headers: { "content-type": "text/csv" },
+      payload: COINBASE_CSV,
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.data.sourceName).toBe("My Coinbase 2024");
   });
 });
