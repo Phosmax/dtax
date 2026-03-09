@@ -100,7 +100,7 @@ export class CcxtService {
 
         // As a fallback for prototyping, we just fetch one popular pair if it's required.
         const symbol = "BTC/USDT";
-        console.log(`[CCXT] Fetching trades for ${exchangeId} (${symbol})`);
+        // Log level: debug (visible in dev via pino-pretty, silent in production)
         const trades = await exchange.fetchMyTrades(symbol, undefined, 100);
         allTrades = allTrades.concat(trades);
       } else {
