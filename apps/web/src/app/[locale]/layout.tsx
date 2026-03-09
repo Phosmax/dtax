@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { NextIntlClientProvider, useMessages } from 'next-intl';
-import { getMessages } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import { routing } from '@/i18n/routing';
+import { NextIntlClientProvider, useMessages } from "next-intl";
+import { getMessages } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { routing } from "@/i18n/routing";
 import "../globals.css";
-import { LocaleNav } from './nav';
-import { AuthProvider } from '@/lib/auth-context';
-import { AuthGuard } from './auth-guard';
+import { LocaleNav } from "./nav";
+import { AuthProvider } from "@/lib/auth-context";
+import { AuthGuard } from "./auth-guard";
 
 export const metadata: Metadata = {
   title: "DTax — AI-Powered Crypto Tax Intelligence",
-  description: "Open source crypto tax calculator with FIFO, LIFO, HIFO support. Calculate your crypto capital gains and generate tax reports.",
+  description:
+    "Open source crypto tax calculator with FIFO, LIFO, HIFO support. Calculate your crypto capital gains and generate tax reports.",
   keywords: ["crypto", "tax", "bitcoin", "FIFO", "capital gains", "portfolio"],
 };
 
@@ -23,7 +24,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
 
   // Validate locale
-  if (!routing.locales.includes(locale as 'en' | 'zh')) {
+  if (!routing.locales.includes(locale as "en" | "zh")) {
     notFound();
   }
 
