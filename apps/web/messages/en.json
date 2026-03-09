@@ -83,7 +83,8 @@
             "success": "{count} transactions imported successfully",
             "errors": "{count} rows had errors",
             "skipped": "{count} duplicates skipped",
-            "noFile": "Please select a file first"
+            "noFile": "Please select a file first",
+            "walletAddress": "Wallet Address"
         },
         "apiSync": {
             "title": "Connect Exchange API",

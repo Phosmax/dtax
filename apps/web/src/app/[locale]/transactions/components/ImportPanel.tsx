@@ -16,6 +16,7 @@ export function ImportPanel({ onImported }: ImportPanelProps) {
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importFormat, setImportFormat] = useState('');
     const [sourceName, setSourceName] = useState('');
+    const [walletAddress, setWalletAddress] = useState('');
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const [importError, setImportError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export function ImportPanel({ onImported }: ImportPanelProps) {
         setImportError(null);
         setImportResult(null);
         try {
-            const res = await importCsv(importFile, importFormat || undefined, sourceName || undefined);
+            const res = await importCsv(importFile, importFormat || undefined, sourceName || undefined, walletAddress || undefined);
             setImportResult(res.data);
             onImported();
         } catch (e) {
@@ -75,11 +76,25 @@ export function ImportPanel({ onImported }: ImportPanelProps) {
                         <option value="coinbase">Coinbase</option>
                         <option value="binance">Binance (International)</option>
                         <option value="binance_us">Binance US</option>
+                        <option value="kraken">Kraken</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="crypto_com">Crypto.com</option>
                         <option value="etherscan">Etherscan (ETH Transactions)</option>
                         <option value="etherscan_erc20">Etherscan (ERC-20 Tokens)</option>
                         <option value="generic">Generic CSV</option>
                     </select>
                 </div>
+                {(importFormat === 'etherscan' || importFormat === 'etherscan_erc20') && (
+                    <div style={{ minWidth: '200px' }}>
+                        <label style={labelStyle}>{t('import.walletAddress')}</label>
+                        <input
+                            placeholder="0x..."
+                            value={walletAddress}
+                            onChange={e => setWalletAddress(e.target.value)}
+                            style={inputStyle}
+                        />
+                    </div>
+                )}
                 <button className="btn btn-primary" onClick={handleImport} disabled={importing || !importFile}>
                     {importing ? t('import.uploading') : t('import.upload')}
                 </button>

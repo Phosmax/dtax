@@ -135,13 +135,14 @@ export interface ImportResult {
     };
 }
 
-export async function importCsv(file: File, format?: string, source?: string): Promise<{ data: ImportResult }> {
+export async function importCsv(file: File, format?: string, source?: string, userAddress?: string): Promise<{ data: ImportResult }> {
     const formData = new FormData();
     formData.append('file', file);
 
     const params = new URLSearchParams();
     if (format) params.set('format', format);
     if (source) params.set('source', source);
+    if (userAddress) params.set('userAddress', userAddress);
     const qs = params.toString();
     const url = qs
         ? `${API_BASE}/api/v1/transactions/import?${qs}`

@@ -83,7 +83,8 @@
             "success": "成功导入 {count} 笔交易",
             "errors": "{count} 行存在错误",
             "skipped": "{count} 条重复已跳过",
-            "noFile": "请先选择文件"
+            "noFile": "请先选择文件",
+            "walletAddress": "钱包地址"
         },
         "apiSync": {
             "title": "连接交易所 API",

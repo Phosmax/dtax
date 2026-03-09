@@ -2,7 +2,7 @@
  * CSV Import Route
  * POST /transactions/import — Upload CSV file, parse, and bulk insert
  *
- * Supports: Coinbase, Binance International, Binance US, Generic
+ * Supports: Coinbase, Binance International, Binance US, Kraken, Etherscan, Generic
  * Auto-detects format or accepts ?format= query parameter
  * Deduplication: generates content fingerprints stored in externalId
  */
@@ -29,7 +29,7 @@ function txFingerprint(tx: ParsedTransaction): string {
     return 'csv:' + createHash('sha256').update(key).digest('hex').slice(0, 16);
 }
 
-const formatSchema = z.enum(['generic', 'coinbase', 'binance', 'binance_us']).optional();
+const formatSchema = z.enum(['generic', 'coinbase', 'binance', 'binance_us', 'kraken', 'etherscan', 'etherscan_erc20', 'gemini', 'crypto_com']).optional();
 
 export async function importRoutes(app: FastifyInstance) {
 
@@ -39,6 +39,7 @@ export async function importRoutes(app: FastifyInstance) {
         const query = request.query as Record<string, string>;
         const formatParam = formatSchema.parse(query.format);
         const sourceName = query.source || undefined;
+        const userAddress = query.userAddress || undefined;
 
         let csvContent: string;
 
@@ -80,6 +81,7 @@ export async function importRoutes(app: FastifyInstance) {
         // Parse CSV
         const parseResult = parseCsv(csvContent, {
             format: formatParam as CsvFormat | undefined,
+            userAddress,
         });
 
         if (parseResult.transactions.length === 0) {
