@@ -72,6 +72,72 @@ export async function connectionRoutes(app: FastifyInstance) {
         return { data: connections };
     });
 
+    // 2b. List all data sources (connections + CSV imports)
+    app.get('/data-sources', async (request) => {
+        const sources = await prisma.dataSource.findMany({
+            where: { userId: request.userId },
+            select: { id: true, name: true, type: true, status: true, lastSyncAt: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        // Count transactions per source
+        const counts = await prisma.transaction.groupBy({
+            by: ['sourceId'],
+            where: { userId: request.userId, sourceId: { not: null } },
+            _count: true,
+        });
+        const countMap = new Map(counts.map(c => [c.sourceId, c._count]));
+
+        return {
+            data: sources.map(s => ({
+                ...s,
+                transactionCount: countMap.get(s.id) || 0,
+            })),
+        };
+    });
+
+    // 2c. Rename a data source
+    app.put('/data-sources/:id', async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const body = z.object({ name: z.string().min(1).max(100) }).parse(request.body);
+
+        const source = await prisma.dataSource.findFirst({
+            where: { id, userId: request.userId },
+        });
+        if (!source) {
+            return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Data source not found' } });
+        }
+
+        const updated = await prisma.dataSource.update({
+            where: { id },
+            data: { name: body.name },
+        });
+
+        return { data: { id: updated.id, name: updated.name } };
+    });
+
+    // 2d. Delete a data source (unlinks transactions, does NOT delete them)
+    app.delete('/data-sources/:id', async (request, reply) => {
+        const { id } = request.params as { id: string };
+
+        const source = await prisma.dataSource.findFirst({
+            where: { id, userId: request.userId },
+        });
+        if (!source) {
+            return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Data source not found' } });
+        }
+
+        // Unlink transactions (set sourceId to null)
+        await prisma.transaction.updateMany({
+            where: { sourceId: id, userId: request.userId },
+            data: { sourceId: null },
+        });
+
+        await prisma.dataSource.delete({ where: { id } });
+
+        return reply.status(204).send();
+    });
+
     // 3. Sync a specific connection (trigger CCXT fetch)
     // Note: This blocks until sync completes. In production, use BullMQ for background syncs.
     app.post('/connections/:id/sync', async (request, reply) => {

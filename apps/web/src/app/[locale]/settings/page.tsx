@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { getPreferences, savePreferences } from '@/lib/preferences';
+import { getDataSources, renameDataSource, deleteDataSource } from '@/lib/api';
+import type { DataSource } from '@/lib/api';
 
 const METHODS = ['FIFO', 'LIFO', 'HIFO'] as const;
 const currentYear = new Date().getFullYear();
@@ -12,17 +14,46 @@ const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - i);
 export default function SettingsPage() {
     const t = useTranslations('settings');
     const tTax = useTranslations('tax');
+    const tDs = useTranslations('dataSources');
     const { user } = useAuth();
 
     const [method, setMethod] = useState<string>('FIFO');
     const [year, setYear] = useState<number>(currentYear);
     const [saved, setSaved] = useState(false);
+    const [sources, setSources] = useState<DataSource[]>([]);
+    const [renamingId, setRenamingId] = useState<string | null>(null);
+    const [renameValue, setRenameValue] = useState('');
 
     useEffect(() => {
         const prefs = getPreferences();
         setMethod(prefs.defaultMethod);
         setYear(prefs.defaultYear);
+        loadSources();
     }, []);
+
+    async function loadSources() {
+        try {
+            const res = await getDataSources();
+            setSources(res.data);
+        } catch { /* ignore */ }
+    }
+
+    async function handleRename(id: string) {
+        if (!renameValue.trim()) return;
+        try {
+            await renameDataSource(id, renameValue.trim());
+            setRenamingId(null);
+            loadSources();
+        } catch { /* ignore */ }
+    }
+
+    async function handleDeleteSource(id: string, name: string) {
+        if (!confirm(tDs('deleteConfirm', { name }))) return;
+        try {
+            await deleteDataSource(id);
+            loadSources();
+        } catch { /* ignore */ }
+    }
 
     function handleSave() {
         savePreferences({
@@ -92,6 +123,63 @@ export default function SettingsPage() {
                         borderRadius: 'var(--radius-sm)', color: '#22c55e', fontSize: '14px',
                     }}>
                         {t('saved')}
+                    </div>
+                )}
+            </div>
+
+            {/* Data Sources */}
+            <div className="card" style={{ padding: '24px', marginTop: '24px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '4px' }}>{tDs('title')}</h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>{tDs('subtitle')}</p>
+
+                {sources.length === 0 ? (
+                    <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{tDs('noSources')}</p>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {sources.map(s => (
+                            <div key={s.id} style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '12px 16px', background: 'var(--bg-secondary)',
+                                borderRadius: 'var(--radius-sm)',
+                            }}>
+                                <div style={{ flex: 1 }}>
+                                    {renamingId === s.id ? (
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <input value={renameValue}
+                                                onChange={e => setRenameValue(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && handleRename(s.id)}
+                                                style={{ ...inputStyle, width: '200px', padding: '4px 8px' }}
+                                                autoFocus />
+                                            <button className="btn btn-primary" onClick={() => handleRename(s.id)}
+                                                style={{ padding: '4px 10px', fontSize: '12px' }}>OK</button>
+                                            <button className="btn btn-secondary" onClick={() => setRenamingId(null)}
+                                                style={{ padding: '4px 10px', fontSize: '12px' }}>✕</button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div style={{ fontSize: '14px', fontWeight: 500 }}>{s.name}</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                {s.type === 'EXCHANGE_API' ? 'API' : s.type === 'CSV_IMPORT' ? 'CSV' : s.type}
+                                                {' · '}{tDs('txCount', { count: s.transactionCount })}
+                                                {' · '}{new Date(s.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <button className="btn btn-secondary"
+                                        onClick={() => { setRenamingId(s.id); setRenameValue(s.name); }}
+                                        style={{ padding: '4px 10px', fontSize: '12px' }}>
+                                        {tDs('rename')}
+                                    </button>
+                                    <button className="btn btn-secondary"
+                                        onClick={() => handleDeleteSource(s.id, s.name)}
+                                        style={{ padding: '4px 10px', fontSize: '12px', color: 'var(--red)' }}>
+                                        {tDs('delete')}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

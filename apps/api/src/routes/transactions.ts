@@ -44,6 +44,7 @@ const listQuerySchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(20),
     asset: z.string().optional(),
     type: z.string().optional(),
+    search: z.string().optional(),
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional(),
     sort: z.enum(['timestamp', 'type', 'sentAmount', 'receivedAmount', 'sentValueUsd', 'receivedValueUsd', 'feeValueUsd']).default('timestamp'),
@@ -91,18 +92,33 @@ export async function transactionRoutes(app: FastifyInstance) {
 
         // Build where clause
         const where: Record<string, unknown> = { userId: request.userId };
+        const andClauses: Record<string, unknown>[] = [];
         if (query.type) where.type = query.type;
         if (query.asset) {
-            where.OR = [
-                { sentAsset: query.asset },
-                { receivedAsset: query.asset },
-            ];
+            andClauses.push({
+                OR: [
+                    { sentAsset: query.asset },
+                    { receivedAsset: query.asset },
+                ],
+            });
         }
         if (query.from || query.to) {
             where.timestamp = {};
             if (query.from) (where.timestamp as Record<string, unknown>).gte = new Date(query.from);
             if (query.to) (where.timestamp as Record<string, unknown>).lte = new Date(query.to);
         }
+        if (query.search) {
+            const term = query.search;
+            andClauses.push({
+                OR: [
+                    { notes: { contains: term, mode: 'insensitive' } },
+                    { sentAsset: { contains: term, mode: 'insensitive' } },
+                    { receivedAsset: { contains: term, mode: 'insensitive' } },
+                    { externalId: { contains: term, mode: 'insensitive' } },
+                ],
+            });
+        }
+        if (andClauses.length > 0) where.AND = andClauses;
 
         const [transactions, total] = await Promise.all([
             prisma.transaction.findMany({

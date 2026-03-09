@@ -17,6 +17,7 @@ export function FilterBar({ onApply }: FilterBarProps) {
     const [type, setType] = useState('');
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
+    const [search, setSearch] = useState('');
 
     function handleApply() {
         const filters: TransactionFilters = {};
@@ -24,6 +25,7 @@ export function FilterBar({ onApply }: FilterBarProps) {
         if (type) filters.type = type;
         if (from) filters.from = new Date(from).toISOString();
         if (to) filters.to = new Date(to + 'T23:59:59').toISOString();
+        if (search.trim()) filters.search = search.trim();
         onApply(filters);
     }
 
@@ -32,14 +34,25 @@ export function FilterBar({ onApply }: FilterBarProps) {
         setType('');
         setFrom('');
         setTo('');
+        setSearch('');
         onApply({});
     }
 
-    const hasFilters = asset || type || from || to;
+    const hasFilters = asset || type || from || to || search;
 
     return (
         <div className="card" style={{ padding: '16px', marginBottom: '16px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', alignItems: 'end' }}>
+                <div>
+                    <label style={labelStyle}>{t('search')}</label>
+                    <input
+                        style={inputStyle}
+                        placeholder={t('searchPlaceholder')}
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleApply()}
+                    />
+                </div>
                 <div>
                     <label style={labelStyle}>{t('asset')}</label>
                     <input

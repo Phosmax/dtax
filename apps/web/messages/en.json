@@ -66,6 +66,8 @@
         "bulkDeleteConfirm": "Delete {count} selected transactions? This cannot be undone.",
         "clearSelection": "Clear",
         "filter": {
+            "search": "Search",
+            "searchPlaceholder": "Notes, asset, ID...",
             "asset": "Asset",
             "assetPlaceholder": "BTC, ETH...",
             "type": "Type",
@@ -339,6 +341,15 @@
         "defaultYear": "Default Tax Year",
         "saved": "Settings saved",
         "save": "Save Settings"
+    },
+    "dataSources": {
+        "title": "Data Sources",
+        "subtitle": "Manage your imported data and exchange connections",
+        "noSources": "No data sources yet. Import CSV files or connect an exchange.",
+        "txCount": "{count} transactions",
+        "rename": "Rename",
+        "delete": "Delete",
+        "deleteConfirm": "Delete data source \"{name}\"? Transactions will be unlinked but not deleted."
     },
     "common": {
         "loading": "Loading DTax...",

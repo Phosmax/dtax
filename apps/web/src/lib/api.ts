@@ -71,6 +71,7 @@ export interface TransactionFilters {
     type?: string;
     from?: string;
     to?: string;
+    search?: string;
 }
 
 export type SortField = 'timestamp' | 'type' | 'sentAmount' | 'receivedAmount' | 'sentValueUsd' | 'receivedValueUsd' | 'feeValueUsd';
@@ -82,6 +83,7 @@ export async function getTransactions(page = 1, limit = 20, filters?: Transactio
     if (filters?.type) params.set('type', filters.type);
     if (filters?.from) params.set('from', filters.from);
     if (filters?.to) params.set('to', filters.to);
+    if (filters?.search) params.set('search', filters.search);
     if (sort) params.set('sort', sort);
     if (order) params.set('order', order);
     return apiFetch<{
@@ -187,6 +189,33 @@ export async function syncConnection(id: string) {
     return apiFetch<{ data: { status: string; message: string } }>(`/api/v1/connections/${id}/sync`, {
         method: 'POST',
     });
+}
+
+// ─── Data Sources ───────────────────────────────
+
+export interface DataSource {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    lastSyncAt: string | null;
+    createdAt: string;
+    transactionCount: number;
+}
+
+export async function getDataSources(): Promise<{ data: DataSource[] }> {
+    return apiFetch('/api/v1/data-sources');
+}
+
+export async function renameDataSource(id: string, name: string) {
+    return apiFetch<{ data: { id: string; name: string } }>(`/api/v1/data-sources/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name }),
+    });
+}
+
+export async function deleteDataSource(id: string) {
+    return apiFetch<void>(`/api/v1/data-sources/${id}`, { method: 'DELETE' });
 }
 
 // ─── Form 8949 ─────────────────────────────────
