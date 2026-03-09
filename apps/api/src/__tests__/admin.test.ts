@@ -38,11 +38,9 @@ function buildAdminApp(role = "ADMIN") {
 
   app.setErrorHandler((error: Error, _request, reply) => {
     if (error instanceof ZodError) {
-      return reply
-        .status(400)
-        .send({
-          error: { code: "VALIDATION_ERROR", message: "Validation failed" },
-        });
+      return reply.status(400).send({
+        error: { code: "VALIDATION_ERROR", message: "Validation failed" },
+      });
     }
     return reply.status(500).send({ error: { message: error.message } });
   });

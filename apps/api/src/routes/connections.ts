@@ -123,11 +123,9 @@ export async function connectionRoutes(app: FastifyInstance) {
       where: { id, userId: request.userId },
     });
     if (!source) {
-      return reply
-        .status(404)
-        .send({
-          error: { code: "NOT_FOUND", message: "Data source not found" },
-        });
+      return reply.status(404).send({
+        error: { code: "NOT_FOUND", message: "Data source not found" },
+      });
     }
 
     const updated = await prisma.dataSource.update({
@@ -146,11 +144,9 @@ export async function connectionRoutes(app: FastifyInstance) {
       where: { id, userId: request.userId },
     });
     if (!source) {
-      return reply
-        .status(404)
-        .send({
-          error: { code: "NOT_FOUND", message: "Data source not found" },
-        });
+      return reply.status(404).send({
+        error: { code: "NOT_FOUND", message: "Data source not found" },
+      });
     }
 
     // Unlink transactions (set sourceId to null)

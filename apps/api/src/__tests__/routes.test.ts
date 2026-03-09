@@ -551,7 +551,9 @@ describe("Connection Routes", () => {
 
   it("POST /connections creates connection with valid keys", async () => {
     const { CcxtService } = await import("../services/ccxt");
-    (CcxtService.testConnection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+    (
+      CcxtService.testConnection as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(true);
 
     mockPrisma.dataSource.create.mockResolvedValueOnce({
       id: "ds-001",
@@ -578,7 +580,9 @@ describe("Connection Routes", () => {
 
   it("POST /connections returns 400 for invalid API keys", async () => {
     const { CcxtService } = await import("../services/ccxt");
-    (CcxtService.testConnection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+    (
+      CcxtService.testConnection as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(false);
 
     const res = await app.inject({
       method: "POST",
@@ -681,9 +685,7 @@ describe("Connection Routes", () => {
     expect(body.data).toHaveLength(2);
     expect(body.data[0].transactionCount).toBeDefined();
     // ds-002 has 15 transactions
-    const csvSource = body.data.find(
-      (s: { id: string }) => s.id === "ds-002",
-    );
+    const csvSource = body.data.find((s: { id: string }) => s.id === "ds-002");
     expect(csvSource.transactionCount).toBe(15);
   });
 
@@ -804,7 +806,11 @@ describe("Import Routes", () => {
     app.addContentTypeParser(
       ["text/csv", "text/plain"],
       { parseAs: "string" },
-      (_req: unknown, body: string, done: (err: null, body: string) => void) => {
+      (
+        _req: unknown,
+        body: string,
+        done: (err: null, body: string) => void,
+      ) => {
         done(null, body);
       },
     );
