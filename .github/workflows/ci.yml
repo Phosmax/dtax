@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -44,6 +44,9 @@ jobs:
 
       - name: Test (tax-engine)
         run: pnpm --filter @dtax/tax-engine run test
+
+      - name: Test (api)
+        run: pnpm --filter @dtax/api run test
 
       - name: Test (cli)
         run: pnpm --filter @dtax/cli run test
@@ -68,7 +71,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
